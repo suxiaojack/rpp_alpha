@@ -2,7 +2,7 @@ import rfile.h
 
 void main()
 {
-	rf.cmd("build ..\\src\\rpp.cxx")
+	rf.cmd("rnasm_build ..\\src\\rpp.cxx")
 	rf.cmd("copy /B /Y ..\\src\\rpp.exe rpp_nasm.exe")
 	rf.cmd("rpp -win ../src/rpp.cxx")
 	rf.cmd("copy /B /Y ..\\src\\rpp.asm rpp_nasm.asm")
