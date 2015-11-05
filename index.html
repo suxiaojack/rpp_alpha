@@ -83,6 +83,8 @@
         margin-top: 30px;
         margin-right: 20px;
       }
+      
+      input{width:200px;height:50px;}
 
       textarea
 		{
@@ -98,8 +100,7 @@
     <div class="emscripten" id="status">Downloading...</div>
 
 <span id='controls'>
-  <span><input type="button" value="run" onclick="rpp_start();">
-  </span>
+ 
 </span>
 
     <div class="emscripten">
@@ -110,6 +111,7 @@
     <div class="emscripten_border">
       <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
     </div>
+    <input type="button" value="run" onclick="rpp_start();">
     <textarea id="rpp_input" rows="20" cols="150"></textarea>
     <textarea id="output" rows="8" cols="150""></textarea>
     
