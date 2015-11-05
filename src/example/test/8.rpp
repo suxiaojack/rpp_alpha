@@ -1,0 +1,17 @@
+﻿/*
+无缝内联汇编
+*/
+
+main
+{
+	//printl esp 
+
+	1+2
+	mov eax,ebx
+	printl eax
+	
+	if(eax)
+		printl "eax is not zero"
+	else
+		printl "eax is zero"
+}

@@ -1,0 +1,29 @@
+﻿/*
+运行时动态调用函数
+*/
+
+void main()
+{
+	p=findf("fadd")
+
+	printl int[p,1,2]
+
+	printl int[findf("fadd"),1,2]
+
+	p=findf("fadd(int,int)")
+
+	printl int[p,1,2]
+
+	p=findf("main.fadd(int,int)")
+
+	printl int[p,1,2]
+
+	p=findf("int.+(int,int)")
+
+	printl int[p,1,2]
+}
+
+int fadd(int a,int b)
+{
+	return a+b
+}

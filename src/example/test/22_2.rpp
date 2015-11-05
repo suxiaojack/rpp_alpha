@@ -1,0 +1,10 @@
+﻿main
+{
+	stdcall["MessageBoxA",0,"abc","123",0]
+	stdcall["MessageBoxW",0,"abc".toutf16.cstrw,"123".toutf16.cstrw,0]
+	@MessageBoxA(0,"aaa","bbb",0)
+	
+#ifdef _JIT
+	void[xf.find_dll_func("MessageBoxA"),0,"111","222",0]
+#endif
+}

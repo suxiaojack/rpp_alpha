@@ -1,0 +1,32 @@
+﻿/*
+连续创建100个线程
+本程序在解释运行时至少需要400MB内存
+*/
+
+main
+{
+	rbuf<int> arr
+	for i=1 to 50
+		arr.push(xf.create_thr(&thread))
+	A a
+	for i=1 to 50
+		arr.push(xf.create_thr(&A.thread,&a))
+	for i in arr
+		xf.wait_thr(arr[i])
+		xf.CloseHandle(arr[i])
+}
+
+thread(void* param)
+{
+	print 2
+}
+
+class A
+{
+	int m_a=2
+
+	thread
+	{
+		print m_a
+	}
+}

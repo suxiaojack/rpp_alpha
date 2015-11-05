@@ -1,0 +1,8 @@
+﻿main
+{
+	s=scanl
+	start=xf.tick
+	rf.cmd(s)
+	printl
+	printl(xf.tick-start)
+}

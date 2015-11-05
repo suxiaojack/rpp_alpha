@@ -37,22 +37,22 @@ del /F /Q .\rpp.exe
 
 del /F /Q .\example\test\*.exe
 del /F /Q .\example\test\*.cpp
+del /F /Q ..\bin\rpp_gpp.asm
+del /F /Q ..\bin\rpp_nasm.asm
+del /F /Q ..\bin\rpp_gpp.exe
+del /F /Q ..\bin\rpp_nasm.exe
 
 pause﻿#include "back/zmain.h"
 
 #ifdef __GNUC__
-#include <string>
 extern "C" int js_main(char* s)
 {
-	//printf(s);
-	//emscripten_run_script(("alert('"+std::string(s)+"')").c_str());
-	//return 0;
 	return zmain::rpp_main((uchar*)s);
 }
 #else
 int main()
 {
-	return zmain::rpp_main((uchar*)"void main(){printl(123)}");
+	return zmain::rpp_main(null);
 }
 #endif
 ﻿#pragma once
@@ -629,7 +629,6 @@ struct zasm
 		}
 		tsent sent=src;
 		int start=0;
-		//const rbuf<tword>& v=src.vword;
 		while(start+2<src.vword.count()&&
 			  src.vword[start].val==rppoptr(c_mbk_l)&&
 			  src.vword[start+1].val==rppoptr(c_dot))
@@ -911,7 +910,6 @@ struct zbin
 		{
 			return false;
 		}
-		//ybase::print_func_asm(*ptfi);
 		item.vstr=item.vstr.sub(0,addr_pos-1);
 		item.vstr+=rstr(r_to_uint(ptfi->vasm.begin()));
 		if(!proc_asm(sh,item))
@@ -1107,7 +1105,7 @@ struct zbin
 				}
 				else
 				{
-					;//return false;
+					;
 				}
 			}
 			elif(ins.second.type==topnd::c_reg)
@@ -1538,10 +1536,6 @@ struct zgpp
 			{
 				continue;
 			}
-			/*if(is_internal_type(sh,q->p->vdata[i].type))
-			{
-				continue;
-			}*/
 			tclass* pclass=yfind::class_search(sh,q->p->vdata[i].type);
 			if(pclass==null)
 			{
@@ -1559,7 +1553,7 @@ struct zgpp
 			pitem->visit=true;
 			build_struct_dec_one(sh,pitem,list,result);
 		}
-		result+="struct ";//+r_cond(q->p->name=="main","_MAIN",type_trans(q->p->name))+"\n";
+		result+="struct ";
 		if(q->p->name=="main")
 		{
 			result+="_MAIN";
@@ -1578,20 +1572,11 @@ struct zgpp
 				result+=rstr("[")+(q->p->vdata[i].count-1)+"];\n";
 			}
 		}
-		/*if(q->p->name.sub(0,3)=="rp<")
-		{
-			result+="\n";
-			result+="	"+type_trans(q->p->name)+"(){}\n";
-			result+="	"+type_trans(q->p->name)+"(const void* a){m_in=(void*)a;}\n";
-		}*/
 		result+="};\n";
 	}
 
 	static rbool is_internal_type(tsh& sh,const rstr& s)
 	{
-		/*return (s==rppkey(c_rd1)||s==rppkey(c_rd2)||
-			s==rppkey(c_rd4)||s==rppkey(c_rd8)||
-			s==rppkey(c_void)||s=="int");*/
 		return ybase::is_basic_type(sh,s)||yfind::is_empty_struct_type(sh,s)||s=="ushort"||s=="int8";
 	}
 
@@ -1675,7 +1660,6 @@ struct zgpp
 			else
 			{
 				rbuf<rstr> vstr=ybase::vword_to_vstr(tfi.vword);
-				//this_trans(vstr);
 				result+=rstr::join<rstr>(vstr," ");
 			}
 			result+="\n}\n\n";
@@ -1690,13 +1674,7 @@ struct zgpp
 				return false;
 			}
 		}
-		/*if(tfi.name=="analyse"&&tfi.ptci->name=="ymemb")
-		{
-			ybase::print_func_sent(tfi);
-		}*/
-		//ybase::print_func_sent(tfi);
 		int id=0;
-		//rstr temp_dec;
 		ifn(ret_var_proc(sh,tfi,id))
 		{
 			return false;
@@ -1718,26 +1696,15 @@ struct zgpp
 			if(tfi.vsent[i].vword.get(1)==rppoptr(c_equal))
 			{
 				continue;
-				/*tsent sent=tfi.vsent[i];
-				sent.vword=sent.vword.sub(2);
-				ifn(yexp::p_exp(sh,sent,tfi,0,tenv()))
-				{
-					return false;
-				}
-				tfi.vsent[i].type=sent.type;*/
 			}
-			//else
-			//{
-				ifn(yexp::p_exp(sh,tfi.vsent[i],tfi,0,tenv()))
-				{
-					return false;
-				}
-			//}
+			ifn(yexp::p_exp(sh,tfi.vsent[i],tfi,0,tenv()))
+			{
+				return false;
+			}
 		}
 		rstr symbol=znasm::get_nasm_symbol(tfi);
 		result+=get_func_dec(tfi)+"//"+tfi.ptci->name+"."+tfi.name_dec+"\n";
 		result+="{\n";
-		//result+=temp_dec;
 		result+="	int ebx;\n";
 		if(tfi.retval.type!=rppkey(c_void))
 		{
@@ -1765,63 +1732,27 @@ struct zgpp
 		rbuf<rbuf<rstr> > vtemp;
 		for(int i=0;i<tfi.vsent.count();i++)
 		{
-			//rbuf<tword>& v=tfi.vsent[i].vword;
 			if(ybase::is_tag<tword>(tfi.vsent[i].vword))
 			{
 				vtemp+=rf::vstr(/*symbol+"_"+*/tfi.vsent[i].vword[0].val,tfi.vsent[i].vword[1].val);
 				//todo:_func_end标号有时不是必须的
-				/*result+=symbol+"_"+v[0].val;
-				result+=v[1].val;
-				result+="\n";*/
 				continue;
 			}
-			//result+="	";
 			rbuf<rstr> vstr=ybase::vword_to_vstr(tfi.vsent[i].vword);
-			//tfunc* ptfi=call_find(sh,vstr);
 			if(is_call(sh,vstr))
 			{
 				ifn(call_trans(sh,tfi,vstr))
 				{
 					return false;
 				}
-				
-				/*if(ptfi->retval.type=="int"||ptfi->retval.type=="int&")
-				{
-					vstr.push_front("=");
-					vstr.push_front("ebx");
-				}*/
 			}
 			//只有int或者int&可以作为逻辑判断条件
-			if(ybase::get_tname(tfi.vsent[i].type)=="int"/*||v.count()==1&&v[0].is_cint()*/)
+			if(ybase::get_tname(tfi.vsent[i].type)=="int")
 			{
 				vstr.push_front("=");
 				vstr.push_front("ebx");
 			}
-			/*elif(vstr.get_left()=="if"||
-				vstr.get_left()=="ifn")
-			{
-				int right=ybase::find_symm_sbk(sh,v,1);
-				if(right>=v.count())
-				{
-					return false;
-				}
-				vstr=ybase::vword_to_vstr(v.sub(2,right));
-				ptfi=call_find(sh,vstr);
-				if(ptfi!=null)
-				{
-					ifn(call_trans(sh,vstr))
-					{
-						return false;
-					}
-					vstr.push_front("(");
-					vstr.push_front(v.get(0).val);
-					vstr+=ybase::vword_to_vstr(v.sub(right));
-				}
-			}*/
-			
 			vtemp+=vstr;
-			//result+=rstr::join<rstr>(vstr," ");
-			//result+=";\n";
 		}
 		ret_quote_trans(vtemp,tfi);
 		ifn(control_trans(tfi,vtemp))
@@ -1837,7 +1768,7 @@ struct zgpp
 			result+=rstr::join<rstr>(vtemp[i]," ");
 			result+=" ;\n";
 		}
-		if(tfi.retval.type!=rppkey(c_void)/*&&!ybase::is_quote(tfi.retval.type)*/)
+		if(tfi.retval.type!=rppkey(c_void))
 		{
 			if(ybase::is_quote(tfi.retval.type))
 			{
@@ -1848,12 +1779,9 @@ struct zgpp
 				result+="	return "+tfi.retval.name+";\n";
 			}
 		}
-		//result+=";\n";
 		result+="}\n\n";
-		//ybase::print_func_sent(tfi);
 		for(int i=0;i<tfi.vsent.count();i++)
 		{
-			//rbuf<tword>& v=tfi.vsent[i].vword;
 			if(ybase::is_tag<tword>(tfi.vsent[i].vword))
 			{
 				continue;
@@ -1861,7 +1789,6 @@ struct zgpp
 			rbuf<rstr> vstr=ybase::vword_to_vstr(tfi.vsent[i].vword);
 			ifn(proc_func_v(sh,tfi,result,vdec,level,vstr))
 			{
-				//ybase::print_vstr(vstr);
 				return false;
 			}
 		}
@@ -1877,15 +1804,13 @@ struct zgpp
 		}
 		for(int i=1;i<v.count();i++)
 		{
-			if(v[i].get_left()=="jmp"&&
-				v[i].get(1)=="_func_end")
+			if(v[i].get_left()=="jmp"&&v[i].get(1)=="_func_end")
 			{
 				if(v[i-1].count()>2&&v[i-1][0]=="ebx"&&v[i-1][1]=="=")
 				{
 					v[i-1]=v[i-1].sub(2);
 				}
-				v[i-1]=rf::vstr(tfi.retval.name,"=","&")+v[i-1];
-				//v[i-1].push_front("return");//todo:上一句不一定是原来的返回语句
+				v[i-1]=rf::vstr(tfi.retval.name,"=","&")+v[i-1];//todo:上一句不一定是原来的返回语句
 			}
 		}
 	}
@@ -1968,36 +1893,6 @@ struct zgpp
 			{
 				result+=v[i];
 			}
-			/*if(i+1<v.count())
-			{
-				rstr s=v[i+1].get_left();
-				if(!ybase::is_tag<rstr>(v[i])&&
-					(s=="jebxz"||s=="jebxnz"))
-				{
-					rbuf<rstr> temp;
-					if(s=="jebxz")
-					{
-						temp+=rstr("ifn");
-					}
-					else
-					{
-						temp+=rstr("if");
-					}
-					temp+=rstr("(");
-					temp+=v[i];
-					temp+=rstr(")");
-					//temp+=rstr("{");
-					temp+=rstr("jmp");
-					temp+=v[i+1].get(1);
-					temp+=rstr(";");
-					//temp+=rstr("}");
-					v[i]=temp;
-					result+=v[i];
-					i++;
-					continue;
-				}
-			}
-			result+=v[i];*/
 		}
 		v=result;
 		return true;
@@ -2066,7 +1961,6 @@ struct zgpp
 				{
 					ifn(proc_func_v(sh,tfi,result,vdec,level,vparam[i]))
 					{
-						//ybase::print_vstr(vparam[i]);
 						return false;
 					}
 				}
@@ -2083,7 +1977,6 @@ struct zgpp
 			{
 				ifn(proc_func_v(sh,tfi,result,vdec,level,vparam[i]))
 				{
-					//ybase::print_vstr(vparam[i]);
 					return false;
 				}
 			}
@@ -2093,13 +1986,12 @@ struct zgpp
 			}
 			return true;
 		}
-		//v.printl();
 		return true;
 	}
 
 	static rbool is_call(tsh& sh,const rbuf<rstr>& v)
 	{
-		if(v.get(1)==rppoptr(c_equal)/*&&yfind::is_class(sh,v.get_left())*/)
+		if(v.get(1)==rppoptr(c_equal))
 		{
 			return is_call(sh,v.sub(2));
 		}
@@ -2112,7 +2004,7 @@ struct zgpp
 
 	static tfunc* call_find(tsh& sh,const rbuf<rstr>& v)
 	{
-		if(v.get(1)==rppoptr(c_equal)/*&&yfind::is_class(sh,v.get_left())*/)
+		if(v.get(1)==rppoptr(c_equal))
 		{
 			return call_find(sh,v.sub(2));
 		}
@@ -2124,21 +2016,6 @@ struct zgpp
 		rstr fname=v.get(3);
 		return yfind::func_search_dec(*ptci,fname);
 	}
-
-	/*static void this_trans(rbuf<rstr>& v)
-	{
-		for(int i=0;i<v.count();i++)
-		{
-			if(v[i]=="this")
-			{
-				v[i]="_THIS";
-			}
-			elif(v[i]=="jmp")
-			{
-				v[i]="goto";
-			}
-		}
-	}*/
 
 	static rbool dot_trans(tsh& sh,tfunc& tfi,rbuf<rstr>& v)
 	{
@@ -2171,7 +2048,7 @@ struct zgpp
 
 	static rbool call_trans(tsh& sh,tfunc& tfi,rbuf<rstr>& v)
 	{
-		if(v.get(1)==rppoptr(c_equal)/*&&yfind::is_class(sh,v.get_left())*/)
+		if(v.get(1)==rppoptr(c_equal))
 		{
 			rbuf<rstr> temp=v.sub(2);
 			rbool retval=call_trans(sh,tfi,temp);
@@ -2192,26 +2069,6 @@ struct zgpp
 			{
 				v[0]+="u";
 			}
-			/*else
-			{
-				for(int i=0;i<tfi.param.count();i++)
-				{
-					if(v[0]==tfi.param[i].name&&ybase::is_quote(tfi.param[i].type))
-					{
-						v[0]="(*"+v[0]+")";
-						return true;
-					}
-				}
-				for(int i=0;i<tfi.local.count();i++)
-				{
-					if(v[0]==tfi.local[i].name&&ybase::is_quote(tfi.local[i].type))
-					{
-						v[0]="(*"+v[0]+")";
-						return true;
-					}
-				}
-			}*/
-			//this_trans(v);
 			return true;
 		}
 		if(v.get_left()==rppoptr(c_mbk_l))
@@ -2227,7 +2084,6 @@ struct zgpp
 			}
 			if(v.get(1)==rppkey(c_pcall))
 			{
-				//ybase::print_vstr(v);
 				rbuf<rbuf<rstr> > vparam=ybase::comma_split<rstr>(
 					sh,v.sub(1,v.count()-1));
 				if(vparam.count()!=5)
@@ -2286,7 +2142,6 @@ struct zgpp
 			}
 			result+=")";
 			v=result;
-			//this_trans(v);
 			return true;
 		}
 		return false;
@@ -2359,7 +2214,6 @@ struct zgpp
 			rstr name=rstr("_GRET")+id;
 			id++;
 			rbuf<tword> vword;
-			//temp_dec+="	"+type_trans(type)+" "+name+" ;\n";
 			tfi.local.push(tdata(type,name));
 			vword+=name;
 			vword+=rppoptr(c_equal);
@@ -2448,7 +2302,6 @@ struct zgpp
 				rstr name=rstr("_GPARAM")+id;
 				id++;
 				rbuf<tword> vword;
-				//temp_dec+="	"+type_trans(type)+" "+name+" ;\n";
 				tfi.local.push(tdata(type,name));
 				vword+=rppoptr(c_mbk_l);
 				vword+=type;
@@ -2545,7 +2398,8 @@ struct zinterpret
 			}
 			elif(count==4)
 			{
-				reg.eax=((int (*)(int,int,int,int))func)(v_pto_int(reg.esp),v_pto_int(reg.esp+4),v_pto_int(reg.esp+8),v_pto_int(reg.esp+12));
+				reg.eax=((int (*)(int,int,int,int))func)(v_pto_int(reg.esp),
+					v_pto_int(reg.esp+4),v_pto_int(reg.esp+8),v_pto_int(reg.esp+12));
 			}
 		}
 		else
@@ -2568,32 +2422,10 @@ struct zinterpret
 			}
 			elif(count==4)
 			{
-				((void (*)(int,int,int,int))func)(v_pto_int(reg.esp),v_pto_int(reg.esp+4),v_pto_int(reg.esp+8),v_pto_int(reg.esp+12));
+				((void (*)(int,int,int,int))func)(v_pto_int(reg.esp),
+					v_pto_int(reg.esp+4),v_pto_int(reg.esp+8),v_pto_int(reg.esp+12));
 			}
 		}
-		/*name.printl();
-		rf::printl(size);
-		if(name=="malloc")
-		{
-			reg.eax=(uint)(xf::malloc(v_pto_uint(reg.esp)));
-		}
-		elif(name=="sprintf")
-		{
-			xf::sprintf(v_pto_pchar(reg.esp),v_pto_pchar(reg.esp+4),v_pto_uint(reg.esp+8));
-		}
-		elif(name=="strlen")
-		{
-			reg.eax=(uint)(xf::strlen(v_pto_pchar(reg.esp)));
-		}
-		elif(name=="memcpy")
-		{
-			xf::memcpy(v_pto_pchar(reg.esp),v_pto_pchar(reg.esp+4),v_pto_uint(reg.esp+8));
-		}
-		elif(name=="printf")
-		{
-			xf::print(v_pto_pchar(reg.esp+4));
-		}
-		return true;*/
 	}
 
 	//为了提高效率将1条指令分解为6条
@@ -2636,327 +2468,6 @@ next:
 		case tins::c_calle_i:
 			proc_calle(reg,(void*)(v_get_imme(cur->first)),v_get_imme(cur->second));
 			v_next_ins;
-			switch(v_get_imme(cur->first))
-			{
-			case tins::c_eval_txt:
-				return false;
-			case tins::c_cp_txt:
-				return false;
-			case tins::c_find_meta:
-				return false;
-			case tins::c_find_func:
-				v_pto_uint(reg.esp+4)=zbin::find_func_bin(sh,
-					(char*)v_pto_uint(reg.esp));
-				reg.esp+=4;
-				v_next_ins;
-			case tins::c_find_dll:
-				/*v_pto_uint(reg.esp+4)=(uint)find_dll(
-					pvmt,(char*)v_pto_uint(reg.esp));
-				reg.esp+=4;
-				v_next_ins;*/
-			case tins::c_stdcall_func:
-				stdcall_func(reg);
-				v_next_ins;
-			case tins::c_cdecl_func:
-				cdecl_func(reg);
-				v_next_ins;
-			case tins::c_get_vclass:
-				v_pto_uint(reg.esp)=(uint)&sh.m_class;
-				v_next_ins;
-
-			case tins::c_thr_create:
-				/*v_pto_uint(reg.esp+8)=pvmt->m_pvm->create_thr(sh,
-					(void*)v_pto_uint(reg.esp),
-					(void*)v_pto_uint(reg.esp+4));
-				reg.esp+=8;
-				v_next_ins;*/
-			case tins::c_thr_wait:
-				/*if(v_pto_uint(reg.esp)!=0)
-					xf::wait_thr(v_pto_uint(reg.esp));
-				reg.esp+=4;
-				v_next_ins;*/
-
-			case tins::c_mu_init:
-				v_pto_int(reg.esp)=(int)(r_new<rmutex>());
-				v_next_ins;
-			case tins::c_mu_del:
-				r_delete((rmutex*)v_pto_int(reg.esp));
-				reg.esp+=4;
-				v_next_ins;
-			case tins::c_mu_enter:
-				((rmutex*)v_pto_int(reg.esp))->enter();
-				reg.esp+=4;
-				v_next_ins;
-			case tins::c_mu_leave:
-				((rmutex*)v_pto_int(reg.esp))->leave();
-				reg.esp+=4;
-				v_next_ins;
-
-			case tins::c_execmd:
-				v_pto_uint(reg.esp+4)=0==xf::cmd(
-					(char*)v_pto_uint(reg.esp));
-				reg.esp+=4;
-				v_next_ins;
-			case tins::c_srand:
-				xf::srand();
-				v_next_ins;
-			case tins::c_rand:
-				v_pto_int(reg.esp)=xf::rand();
-				v_next_ins;
-			case tins::c_gettick:
-				v_pto_int(reg.esp)=xf::tick();
-				v_next_ins;
-			case tins::c_sleep:
-				xf::sleep(v_pto_int(reg.esp));
-				reg.esp+=4;
-				v_next_ins;
-
-			case tins::c_puts:
-				printf("%s",r_to_pchar(v_pto_int(reg.esp)));
-				reg.esp+=4;
-				v_next_ins;
-			case tins::c_puts_l:
-				printf("%s",rstr(r_to_pchar(v_pto_int(reg.esp)),
-					v_pto_int(reg.esp+4)).cstr());
-				reg.esp+=8;
-				v_next_ins;
-			case tins::c_getch:
-				v_pto_int(reg.esp)=xf::getch();
-				v_next_ins;
-			case tins::c_getstdin:
-				v_pto_int(reg.esp)=(int)stdin;
-				v_next_ins;
-			case tins::c_getstdout:
-				v_pto_int(reg.esp)=(int)stdout;
-				v_next_ins;
-
-			case tins::c_sprintf:
-				sprintf(r_to_pchar(v_pto_int(reg.esp)),
-					r_to_pchar(v_pto_int(reg.esp+4)),
-					v_pto_int(reg.esp+8));
-				reg.esp+=12;
-				v_next_ins;
-			case tins::c_sprintf8:
-				sprintf((char*)v_pto_int(reg.esp),
-					(char*)v_pto_int(reg.esp+4),
-					v_pto_int8(reg.esp+8));
-				reg.esp+=16;
-				v_next_ins;
-			case tins::c_sscanf:
-				sscanf((char*)v_pto_int(reg.esp),
-					(char*)v_pto_int(reg.esp+4),
-					v_pto_int(reg.esp+8));
-				reg.esp+=12;
-				v_next_ins;
-
-			case tins::c_malloc:
-				v_pto_uint(reg.esp+4)=r_to_uint(
-					malloc(v_pto_uint(reg.esp)));
-				reg.esp+=4;
-				v_next_ins;
-			case tins::c_mfree:
-				free(r_to_pchar(v_pto_uint(reg.esp)));
-				reg.esp+=4;
-				v_next_ins;
-			case tins::c_memset:
-				memset((char*)v_pto_uint(reg.esp),
-					v_pto_int(reg.esp+4),
-					v_pto_uint(reg.esp+8));
-				reg.esp+=12;
-				v_next_ins;
-			case tins::c_memcpy:
-				memcpy((char*)v_pto_uint(reg.esp),
-					(char*)v_pto_uint(reg.esp+4),
-					v_pto_uint(reg.esp+8));
-				reg.esp+=12;
-				v_next_ins;
-			
-			case tins::c_strcpy:
-				strcpy((char*)v_pto_uint(reg.esp),
-					(char*)v_pto_uint(reg.esp+4));
-				reg.esp+=8;
-				v_next_ins;
-			case tins::c_strcmp:
-				v_pto_int(reg.esp+8)=strcmp(
-					(char*)v_pto_uint(reg.esp),
-					(char*)v_pto_uint(reg.esp+4));
-				reg.esp+=8;
-				v_next_ins;
-			case tins::c_strlen:
-				v_pto_uint(reg.esp+4)=
-					strlen((char*)v_pto_uint(reg.esp));
-				reg.esp+=4;
-				v_next_ins;
-			
-			case tins::c_fopen_w:
-				v_pto_uint(reg.esp+8)=(int)xf::fopenw(
-					(wchar*)v_pto_uint(reg.esp),
-					(wchar*)v_pto_uint(reg.esp+4));
-				reg.esp+=8;
-				v_next_ins;
-			case tins::c_fopen:
-				v_pto_uint(reg.esp+8)=(uint)fopen(
-					(char*)v_pto_uint(reg.esp),
-					(char*)v_pto_uint(reg.esp+4));
-				reg.esp+=8;
-				v_next_ins;
-			case tins::c_fclose:
-				v_pto_int(reg.esp+4)=fclose(
-					(FILE*)v_pto_uint(reg.esp));
-				reg.esp+=4;
-				v_next_ins;
-			case tins::c_fread:
-				v_pto_uint(reg.esp+16)=fread(
-					(void*)v_pto_uint(reg.esp),
-					v_pto_uint(reg.esp+4),
-					v_pto_uint(reg.esp+8),
-					(FILE*)v_pto_uint(reg.esp+12));
-				reg.esp+=16;
-				v_next_ins;
-			case tins::c_fwrite:
-				v_pto_uint(reg.esp+16)=fwrite(
-					(void*)v_pto_uint(reg.esp),
-					v_pto_uint(reg.esp+4),
-					v_pto_uint(reg.esp+8),
-					(FILE*)v_pto_uint(reg.esp+12));
-				reg.esp+=16;
-				v_next_ins;
-			case tins::c_fseek:
-				fseek((FILE*)v_pto_uint(reg.esp),
-					v_pto_int(reg.esp+4),
-					v_pto_int(reg.esp+8));
-				reg.esp+=12;
-				v_next_ins;
-			case tins::c_fseek8:
-				xf::fseek8((FILE*)v_pto_uint(reg.esp),
-					v_pto_int8(reg.esp+4),
-					v_pto_int(reg.esp+12));
-				reg.esp+=16;
-				v_next_ins;
-			case tins::c_ftell:
-				v_pto_uint(reg.esp+4)=ftell(
-					(FILE*)v_pto_uint(reg.esp));
-				reg.esp+=4;
-				v_next_ins;
-			case tins::c_ftell8:
-				v_pto_int8(reg.esp+4)=xf::ftell8(
-					(FILE*)v_pto_uint(reg.esp));
-				reg.esp+=4;
-				v_next_ins;
-
-			case tins::c_s_socket:
-				v_pto_int(reg.esp+12)=xsock::socket(
-					v_pto_int(reg.esp),
-					v_pto_int(reg.esp+4),
-					v_pto_int(reg.esp+8));
-				reg.esp+=12;
-				v_next_ins;
-			case tins::c_s_connect:
-				v_pto_int(reg.esp+12)=xsock::connect(
-					v_pto_int(reg.esp),
-					(void*)v_pto_int(reg.esp+4),
-					v_pto_int(reg.esp+8));
-				reg.esp+=12;
-				v_next_ins;
-			case tins::c_s_close:
-				v_pto_int(reg.esp+4)=xsock::close(
-					v_pto_int(reg.esp));
-				reg.esp+=4;
-				v_next_ins;
-			case tins::c_s_send:
-				v_pto_int(reg.esp+16)=xsock::send(
-					v_pto_int(reg.esp),
-					(void*)v_pto_int(reg.esp+4),
-					v_pto_int(reg.esp+8),
-					v_pto_int(reg.esp+12));
-				reg.esp+=16;
-				v_next_ins;
-			case tins::c_s_recv:
-				v_pto_int(reg.esp+16)=xsock::recv(
-					v_pto_int(reg.esp),
-					(void*)v_pto_int(reg.esp+4),
-					v_pto_int(reg.esp+8),
-					v_pto_int(reg.esp+12));
-				reg.esp+=16;
-				v_next_ins;
-			case tins::c_s_bind:
-				v_pto_int(reg.esp+12)=xsock::bind(
-					v_pto_int(reg.esp),
-					(void*)v_pto_int(reg.esp+4),
-					v_pto_int(reg.esp+8));
-				reg.esp+=12;
-				v_next_ins;
-			case tins::c_s_listen:
-				v_pto_int(reg.esp+8)=xsock::listen(
-					v_pto_int(reg.esp),
-					v_pto_int(reg.esp+4));
-				reg.esp+=8;
-				v_next_ins;
-			case tins::c_s_accept:
-				v_pto_int(reg.esp+12)=xsock::accept(
-					v_pto_int(reg.esp),
-					(void*)v_pto_int(reg.esp+4),
-					(int*)v_pto_int(reg.esp+8));
-				reg.esp+=12;
-				v_next_ins;
-
-			case tins::c_gbk_to_utf8:
-				v_pto_int(reg.esp+8)=rcode::gbk_to_utf8_c(
-					(uchar*)v_pto_uint(reg.esp),
-					(uchar*)v_pto_uint(reg.esp+4));
-				reg.esp+=8;
-				v_next_ins;
-			case tins::c_gbk_to_utf16:
-				v_pto_int(reg.esp+8)=rcode::gbk_to_utf16_c(
-					(uchar*)v_pto_uint(reg.esp),
-					(uchar*)v_pto_uint(reg.esp+4));
-				reg.esp+=8;
-				v_next_ins;
-			case tins::c_utf8_to_gbk:
-				v_pto_int(reg.esp+8)=rcode::utf8_to_gbk_c(
-					(uchar*)v_pto_uint(reg.esp),
-					(uchar*)v_pto_uint(reg.esp+4));
-				reg.esp+=8;
-				v_next_ins;
-			case tins::c_utf8_to_utf16:
-				v_pto_int(reg.esp+8)=rcode::utf8_to_utf16_c(
-					(uchar*)v_pto_uint(reg.esp),
-					(uchar*)v_pto_uint(reg.esp+4));
-				reg.esp+=8;
-				v_next_ins;
-			case tins::c_utf16_to_gbk:
-				v_pto_int(reg.esp+8)=rcode::utf16_to_gbk_c(
-					(uchar*)v_pto_uint(reg.esp),
-					(uchar*)v_pto_uint(reg.esp+4));
-				reg.esp+=8;
-				v_next_ins;
-			case tins::c_utf16_to_utf8:
-				v_pto_int(reg.esp+8)=rcode::utf16_to_utf8_c(
-					(uchar*)v_pto_uint(reg.esp),
-					(uchar*)v_pto_uint(reg.esp+4));
-				reg.esp+=8;
-				v_next_ins;
-			
-			case tins::c_CloseHandle:
-#ifdef _MSC_VER
-				v_pto_int(reg.esp+4)=CloseHandle(
-					(HANDLE)v_pto_int(reg.esp));
-#endif
-				reg.esp+=4;
-				v_next_ins;
-			case tins::c_MessageBoxA:
-#ifdef _MSC_VER
-				MessageBoxA(0,"","",0);
-#endif
-				v_next_ins;
-			case tins::c_itof8:
-				v_pto_f8(reg.esp+4)=(double)v_pto_int(reg.esp);
-				reg.esp+=4;
-				v_next_ins;
-
-			default:
-				return false;
-			}
 		case tins::c_calle_i+1:
 		case tins::c_calle_i+2:
 		case tins::c_calle_i+3:
@@ -3787,66 +3298,6 @@ next:
 		return true;
 #endif
 	}
-	
-	//查找DLL中的函数
-	/*static void* find_dll(tvm_t* pvmt,const char* name)
-	{
-		if(pvmt->m_func.exist(name))
-		{
-			return pvmt->m_func[name];
-		}
-		void* ret=zjitf::find_dll_full(name);
-		if(ret!=null)
-		{
-			pvmt->m_func[name]=ret;
-		}
-		return ret;
-	}*/
-	
-	//调用外部函数
-	static void stdcall_func(treg& reg)
-	{
-#ifdef _MSC_VER
-#ifndef _WIN64
-		uint addr=v_pto_uint(reg.esp);
-		int count=v_pto_int(reg.esp+4);
-		int tmp;
-		for(int i=count-1;i>=0;i--)
-		{
-			tmp=v_pto_int(reg.esp+8+i*4);
-			_asm push tmp
-		}
-		_asm call addr
-		_asm mov tmp,eax
-		v_pto_int(reg.esp+8+count*4)=tmp;
-		reg.esp+=8+count*4;
-#endif
-#endif
-	}
-	
-	//调用外部函数
-	static void cdecl_func(treg& reg)
-	{
-#ifdef _MSC_VER
-#ifndef _WIN64
-		uint addr=v_pto_uint(reg.esp);
-		int count=v_pto_int(reg.esp+4);
-		int tmp;
-		for(int i=count-1;i>=0;i--)
-		{
-			tmp=v_pto_int(reg.esp+8+i*4);
-			_asm push tmp
-		}
-		_asm call addr
-		_asm mov tmp,eax
-		_asm mov eax,count
-		_asm imul eax,4
-		_asm add esp,eax
-		v_pto_int(reg.esp+8+count*4)=tmp;
-		reg.esp+=8+count*4;
-#endif
-#endif
-	}
 
 	static rbool init(tsh& sh,rbuf<uchar>& stack,
 		treg& reg,rbuf<tasm>& init_vasm)
@@ -3870,49 +3321,6 @@ next:
 		vasm+=rf::vstr("halt");
 		return zbin::proc_vasm(sh,vasm);
 	}
-
-	/*static rbool init_thr_ins(tsh& sh,rbuf<tasm>& vasm,void* start,void* param)
-	{
-		vasm.clear();
-		vasm+=rf::vstr("push",rstr((uint)param));
-		vasm+=rf::vstr("call",rstr((uint)start));
-		vasm+=rf::vstr("halt");
-		return zbin::proc_vasm(sh,vasm);
-	}
-
-#ifndef _RPP
-	int create_thr(tsh& sh,void* start,void* param)
-	{
-		rmutex_t mutex_t(sh.m_mutex);
-		tvm_t item;
-		m_list.push(item);
-		tvm_t* pitem=&m_list.top();
-		ifn(init_thr_ins(sh,pitem->m_vasm,start,param))
-		{
-			return 0;
-		}
-		init_reg(sh,pitem);
-		pitem->m_pvm=this;
-		pitem->m_thread=xf::create_thr(thread,pitem);
-		return pitem->m_thread;
-	}
-
-	//这里必须用裸线程
-	static xthread_ret xthread_call thread(void* param)
-	{
-
-		tvm_t* pvmt=(tvm_t*)param;
-		tvm* pvm=pvmt->m_pvm;
-		ifn(qrun(pvm->m_sh,pvmt,pvmt->m_reg))
-		{
-			rpperror("undefined ins");
-		}
-		pvm->m_sh.m_mutex.enter();
-		pvm->m_list.erase(pvmt);
-		pvm->m_sh.m_mutex.leave();
-		return 0;
-	}
-#endif*/
 };
 ﻿#pragma once
 
@@ -4259,7 +3667,6 @@ struct zjit
 		int i=zbin::find_comma(sh,item.vstr);
 		if(!a_opnd(sh,item,i-1,item.vstr.sub(1,i),item.ins.first))
 		{
-			//item.ptfi->name.printl();
 			return false;
 		}
 		if(!a_opnd(sh,item,i+1,item.vstr.sub(i+1),item.ins.second))
@@ -5663,7 +5070,7 @@ struct zmain
 };
 
 //todo C++不支持mixin，只能这么写
-rbool _func_to_x86(tsh& sh,tfunc& tfi,tenv env)
+rbool r_func_to_x86(tsh& sh,tfunc& tfi,tenv env)
 {
 	return zjit::func_to_x86(sh,tfi,env);
 }
@@ -6578,307 +5985,11 @@ void main()
 	printl sizeof(int*)
 }
 ﻿/*
-汇编优化工具
-使汇编代码更具可读性，并提高汇编速度
-优化15000行大约需要30秒
-*/
-
-import rfile.h
-
-main
-{
-	//name=getsl
-	name='http.asm'
-	s=rfile.read_all_n(name)
-
-	s=s.replace('\n','\r\n')
-	s=s.replace('dword esp','esp')
-	s=s.replace('dword ebp','ebp')
-	s=s.replace('dword edi','edi')
-	s=s.replace('dword esi','esi')
-	s=s.replace('dword ebx','ebx')
-	s=s.replace(',ecx',', ecx')
-	s=s.replace('ebx,0','ebx , 0')
-	s=s.replace('ecx,[','ecx , [')
-	s=s.replace('mov dword [ edi ] , esi','mov [ edi ] , esi')
-	s=opt_sym(s)
-	s=line_del(s)
-	s=opt_jmp(s)
-	s=line_del(s)
-	s=opt_two(s)
-	s=line_del(s)
-	s=sym_replace(s)
-	s=line_del(s)
-
-	rfile.write_all_n(name,s)	
-}
-
-rstr line_del(rstr& s)
-{
-	return s.replace('\r\n\r\n\r\n','\r\n\r\n')
-}
-
-//符号替换
-rstr sym_replace(rstr s)
-{
-	rbuf<rstr> arr
-	r_split_e<rstr>(s,'\r\n',arr)
-	rstr ret
-	for i in arr
-		temp=arr[i]
-		if temp.get_top==`:&&is_symbol(temp.sub(0,temp.count-1))
-			ret+=sym_trans(temp.sub(0,temp.count-1))+':'
-			ret+='\r\n'
-			continue
-		if (temp.sub(0,5)=='	jmp '||
-			temp.sub(0,6)=='	call '||
-			temp.sub(0,5)=='	jnz '||
-			temp.sub(0,4)=='	jg '||
-			temp.sub(0,4)=='	jl '||
-			temp.sub(0,5)=='	jae '||
-			temp.sub(0,4)=='	jz ')
-			index=temp.find(' ')
-			symbol=temp.sub(index+1)
-			if is_symbol(symbol)
-				ret+=temp.sub(0,index+1)+sym_trans(symbol)
-				ret+='\r\n'
-				continue
-		ret+=temp
-		ret+='\r\n'
-	return ret
-}
-
-rstr sym_trans(rstr s)
-{
-	rstr ret
-	for i in s
-		two=s.sub(i,i+2)
-		if two=='28'||two=='29'//()
-			i++
-			ret+='_'
-		elif two=='2E'||two=='2C'||two=='5F'//.,_
-			i++
-			ret+='_'
-		elif two=='26'
-			i++
-			ret+='q'
-		elif two=='7E'
-			i++
-			ret+='d'
-		elif two=='7C'
-			i++
-			ret+='h'
-		elif two=='5B'
-			i++
-			ret+='i'
-		elif two=='5D'
-			i++
-			ret+='j'
-		elif two=='3D'//=
-			i++
-			ret+='a'
-		elif two=='2B'
-			i++
-			ret+='b'
-		elif two=='2D'//-
-			i++
-			ret+='s'
-		elif two=='2A'//*
-			i++
-			ret+='t'
-		elif two=='2F'
-			i++
-			ret+='f'
-		elif two=='25'
-			i++
-			ret+='e'
-		elif two=='21'//!
-			i++
-			ret+='o'
-		elif two=='3E'//>
-			i++
-			ret+='x'
-		elif two=='3C'//<
-			i++
-			ret+='y'
-		else
-			ret+=s[i]
-	return seq_replace(ret)
-}
-
-rstr seq_replace(rstr s)
-{
-	//s=s.replace('__','_')
-	//s=s.replace('__','_')
-	//s=s.replace('__','_')
-	if s.get_top==`_
-		s.pop
-	if s.get_top==`_
-		s.pop
-	return s
-}
-
-//无引用符号删除
-rstr opt_sym(rstr s)
-{
-	rbuf<rstr> arr
-	r_split_e<rstr>(s,'\r\n',arr)
-	rstr ret
-	for i in arr
-		temp=arr[i]
-		full=temp.sub(0,temp.count-1)
-		if temp.get_top==`:&&is_symbol(full)
-			symbol=get_symbol(full)
-			ifn symbol.empty
-				if get_count(arr,i,symbol,full)==1
-					continue
-		ret+=temp
-		ret+='\r\n'
-	return ret
-}
-
-//jmp后接一个跳转符号
-rstr opt_jmp(rstr s)
-{
-	rbuf<rstr> arr
-	r_split_e<rstr>(s,'\r\n',arr)
-	rstr ret
-	for i in arr
-		temp=arr[i]
-		a=arr.get(i+1)
-		full=a.sub(0,a.count-1)
-		if temp.sub(0,5)=='	jmp '&&temp.sub(5)==full&&a.get_top==`:
-			symbol=get_symbol(full)
-			ifn symbol.empty
-				if get_count(arr,i,symbol,full)==2
-					i++
-					continue
-				else
-					continue
-		ret+=temp
-		ret+='\r\n'
-	return ret
-}
-
-//连续2个jmp，后一个jmp不可能被执行
-rstr opt_two(rstr s)
-{
-	rbuf<rstr> arr
-	r_split_e<rstr>(s,'\r\n',arr)
-	rstr ret
-	for i in arr
-		temp=arr[i]
-		a=arr.get(i+1)
-		if temp.sub(0,5)=='	jmp '&&a.sub(0,5)=='	jmp '
-			ret+=temp
-			ret+='\r\n'
-			i++
-			continue
-		ret+=temp
-		ret+='\r\n'
-	return ret
-}
-
-int get_count(rbuf<rstr>& arr,int i,rstr& symbol,rstr& full)
-{
-	for j=i-1;j>=0;j--
-		if arr[j].sub(0,arr[j].count-1)==symbol&&`:==arr[j].get_top
-			break
-	for k=i+1;k<arr.count;k++
-		if arr[k].empty
-			break
-	return find_count(arr,j,k,full)
-}
-
-rstr get_symbol(rstr s)
-{
-	for i=s.count-1;i>=0;i--
-		if s[i]==`_&&s.sub(i+1).is_number
-			return s.sub(0,i)
-	return ''
-}
-
-int find_count(rbuf<rstr>& arr,int left,int right,rstr& symbol)
-{
-	count=0
-	for i=left;i<=right;i++
-		count+=find_count(arr[i],symbol)
-	return count
-}
-
-int find_count(rstr src,rstr dst)
-{
-	count=0
-	for i in src
-		if src.sub(i,i+dst.count)==dst
-			count++
-	return count	
-}
-
-bool is_symbol(rstr s)
-{
-	for i in s
-		ifn is_symbol(s[i])
-			return false
-	return true
-}
-
-bool is_symbol(char ch)
-{
-	return ch>=`A&&ch<=`Z||ch>=`a&&ch<=`z||ch>=`0&&ch<=`9||ch==`_
-}
-﻿/*
-BF解释器增强版，支持32位运算
-这个语言并不像看上去那么简单，下面是一个BF版的Hello World：
-++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.
->+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.
-*/
-
-void main()
-{
-	code=getsl
-	rbuf<int> data(30000)
-	rf.memset(data.begin,0,data.size)
-	pd=0
-	for pc=0;pc<code.count;pc++
-		switch code[pc]
-		case `>
-			pd++
-		case `<
-			pd--
-		case `+
-			data[pd]++
-		case `-
-			data[pd]--
-		case `.
-			puts(rstr.format('%c',data[pd]))
-		case `,
-			data[pd]=rf.getch
-		case `[
-			ifn data[pd]
-				pc=find< ++ >(pc,code,`[,`])
-				continue//这里也可用continued
-		case `]
-			if data[pd]
-				pc=find< -- >(pc,code,`],`[)
-				continue
-}
-
-int find<T>(int pc,rstr& code,int left,int right)
-{
-	count=0
-	for i=pc;;i T
-		if code[i]==left
-			count++
-		elif code[i]==right
-			count--
-		if count==0
-			return i
-}﻿/*
 检查当前目录下文本文件的编码类型
 */
 
-import "rdir.h"
+import rdir.h
+import rfile.h
 
 main
 {
@@ -6901,15 +6012,15 @@ main
 		s.printl
 	}
 }﻿//1.h amd 3.45GHZ cost time 3600ms ,new version 2800ms 1.89 2609ms fix2 2516ms 2094ms
-//36_2.h cost time 5375ms (1.83 4985ms),new version 4438ms 1.89 4156ms 3375ms
+//36_2.rpp cost time 5375ms (1.83 4985ms),new version 4438ms 1.89 4156ms 3375ms
 main
 {
-	start=rf.tick
+	start=xf.tick
 	for i=1 to 10
-		//rf.cmd("rpp example\\36_2.h")
-		rf.cmd("rpp example\\1.h")
-	putsl
-	putsl(rf.tick-start)
+		//rf.cmd("rpp example\\36_2.rpp")
+		rf.cmd("rpp ..\\src\\example\\test\\1.rpp")
+	printl
+	printl(xf.tick-start)
 }﻿/*
 统计当前目录下代码行数
 如果使用utf16统计更准确
@@ -7184,7 +6295,7 @@ void main()
 			continue
 		s=rfile.read_all_n(v[i])
 		if s.find(str)<s.count
-			putsl(v[i])
+			printl(v[i])
 }﻿/*
 编译生成exe并运行
 */
@@ -7249,73 +6360,8 @@ void clear(rstr name)
 	rfile.remove(name+'.exe')
 	rfile.remove(name+'.cpp')
 }﻿/*
-简单的http服务器，参考《深入理解计算机系统》
-运行后在浏览器输入http://127.0.0.1/example/1.h
-*/
-
-import rsock.h
-import rfile.h
-import rdir.h
-
-main
-{
-	rsock svr
-	rsock client
-	svr.listen(80)
-	for svr.accept(client)	
-		proc(client,client.recv_s(65536))
-		client.close
-}
-
-class http_item
-{
-	rstr name
-	rstr cont
-}
-
-proc(rsock& client,rstr& s)
-{
-	s.print
-	vstr=s.split('\r\n')
-	rbuf<http_item> vitem
-	for i in vstr
-		pos=vstr[i].find(' ')
-		http_item item
-		item.name=vstr[i].sub(0,pos)
-		item.cont=vstr[i].sub(pos+1)
-		vitem+=item
-	proc(client,vitem)
-}
-
-proc(rsock& client,rbuf<http_item>& v)
-{
-	if v.empty||v.get(0).name!='GET'
-		return
-	path=v[0].cont.sub(0,v[0].cont.find(' '))
-	path='.'+path
-	rfile file(path)
-	s='HTTP/1.1 200 OK\r\n'
-	s+='Server: RPP Web Server\r\n'
-	s+='Content-Length: '+file.size+'\r\n'
-	s+='Content-type: '+get_type(path)+'\r\n\r\n'
-	s+=file.read_all
-	client.send_s(s)
-}
-
-rstr get_type(rstr name)
-{
-	name=rdir.get_suffix(rdir.get_name(name))
-	if name=='htm'||name=='html'
-		return 'text/html'
-	elif name=='gif'
-		return 'image/gif'
-	elif name=='jpg'
-		return 'image/jpg'
-	else
-		return 'text/plain'
-}﻿/*
 检查代码每行是否超过92字符
-rpp -jit example\line_check.h ../rpp/
+rpp example\line_check.rpp ../rpp/
 */
 
 import rdir.h
@@ -7334,8 +6380,8 @@ bool check_line(rstrw s)
 			count++
 	if count<=92
 		return true
-	putsl 'count '+count
-	putsl(s.torstr)
+	printl 'count '+count
+	printl(s.torstr)
 	return false
 }
 
@@ -7348,10 +6394,10 @@ bool check_s(rstrw s)
 		if s[i]==13&&s.get(i+1)!=10
 			return false
 		temp+=s[i]
-	v=r_split_e_r<rstrw>(temp,'\r\n')
+	v=r_split_e<rstrw>(temp,'\r\n')
 	for i in v
 		ifn check_line(v[i])
-			putsl('line '+(i+1))
+			printl('line '+(i+1))
 			return false
 	return true
 }
@@ -7365,13 +6411,16 @@ bool check_file(rstr name)
 	ok=false
 	if(buf[0]==0xff&&buf[1]==0xfe)
 		s=rfile.read_all_n(name).sub(2)
-		ok=check_s(rstrw(s.begin,s.count))
+		rstrw temp
+		temp.set_size(s.count)
+		xf.memcpy(temp.begin,s.begin,s.count)
+		ok=check_s(temp)
 	elif(buf[0]==0xef&&buf[1]==0xbb&&buf[2]==0xbf)
 		s=rfile.read_all_n(name).sub(3)
 		ok=check_s(rstrw(s))
 	if ok
 		return true
-	putsl(name)
+	printl(name)
 	return false
 }
 
@@ -7388,70 +6437,6 @@ void main()
 		elif name.sub(name.count-4)=='.cpp'
 			ifn check_file(name)
 				break
-}﻿/*
-60行RPP实现的lisp解释器
-未处理lambda、上下文等，有待完善
-*/
-
-void main()
-{
-	for
-		putsl(eval(getsl))
-}
-
-rstr eval(rstr s)
-{
-	return eval(tokenize(s).split(' '))
-}
-
-rstr eval(rbuf<rstr>& v)
-{
-	if v.get(0)!='('
-		return v.get(0)
-	next=find(v.sub(2))+2
-	switch v.get(1)
-	case '+'
-		return eval(v.sub(2,next)).toint+eval(v.sub(next,v.count-1)).toint
-	case '-'
-		return eval(v.sub(2,next)).toint-eval(v.sub(next,v.count-1)).toint
-	case '*'
-		return eval(v.sub(2,next)).toint*eval(v.sub(next,v.count-1)).toint
-	case '/'
-		return eval(v.sub(2,next)).toint/eval(v.sub(next,v.count-1)).toint
-	return ''
-}
-
-int find(rbuf<rstr>& v)
-{
-	return r_cond(v.get(0)=='(',find_sbk(v)+1,1)
-}
-
-int find_sbk(rbuf<rstr>& v)
-{
-	count=0
-	for i in v
-		if '('==v[i]
-			++count
-		if ')'==v[i]
-			--count
-		if 0==count
-			return i
-	return v.count
-}
-
-rstr tokenize(rstr s)
-{
-	rstr ret
-	for i in s
-		if s[i]==`(
-			ret+=' ( '
-		elif s[i]==`)
-			ret+=' ) '
-		elif s[i]==0xa||s[i]==0xd||s[i]==9
-			ret+=' '
-		else
-			ret+=s[i]
-	return ret
 }﻿/*
 编译生成exe并运行
 */
@@ -7529,1090 +6514,6 @@ void main()
 		printl "error"
 }
 ﻿/*
-彩色版控制台贪食蛇
-该游戏只能以解释模式或JIT模式运行
-*/
-
-int g_std_out
-rbuf<int> g_arr
-int g_next
-int g_food
-
-void main()
-{
-begin:
-	init	
-	start=rf.tick
-	for
-		key
-		if rf.tick-start<100
-			continue
-		start=rf.tick
-		ifn check
-			goto begin
-		g_arr.push_front(g_arr[0]+g_next)
-		if g_food!=g_arr[0]
-			g_arr.pop
-		else
-			food
-		update
-}
-
-void update()
-{
-	for i=0 to 199
-		gotoxy(i%10*2,i/10)
-		if g_arr.exist(i)
-			out("■")
-		elif i==g_food
-			out("★")
-		else
-			puts("  ")
-}
-
-void init()
-{
-	rf.srand
-	g_std_out=rf.GetStdHandle(-11)
-	g_next=10
-	g_arr.clear
-	g_arr.push(105)
-	food
-
-	CONSOLE_CURSOR_INFO cur_info
-	cur_info.dwSize=1
-	cur_info.bVisible=0
-	rf.SetConsoleCursorInfo(g_std_out,&cur_info)
-	rf.cmd("mode con cols=20 lines=22")//保留一行留给输入法
-
-	rf.SetConsoleTextAttribute(g_std_out,0x0a)
-	gotoxy(0,20)
-	puts(" ******************")	
-}
-
-void key()
-{
-	if rf.GetAsyncKeyState(0x26)
-		temp=-10
-	elif rf.GetAsyncKeyState(0x28)
-		temp=10
-	elif rf.GetAsyncKeyState(0x25)
-		temp=-1
-	elif rf.GetAsyncKeyState(0x27)
-		temp=1
-	else
-		return
-	if g_arr.count<2||g_arr.get(1)!=g_arr.get(0)+temp
-		g_next=temp
-}
-
-bool check()
-{
-	temp=g_arr[0]+g_next
-	if temp<0||temp>199||int.abs(temp%10-g_arr[0]%10)>1||g_arr.exist(temp)
-		rf.MessageBoxA(0,('over len '+g_arr.count).cstr,"",0)
-		return false
-	return true
-}
-
-void food()
-{
-	g_food=rf.rand()%200
-	if g_arr.exist(g_food)
-		food
-}
-
-void out(char* s)
-{
-	puts(rcode.utf8_to_gbk(s))
-}
-
-void gotoxy(int x,int y)
-{
-	COORD pos
-	pos.x=x
-	pos.y=y
-	rf.SetConsoleCursorPosition(g_std_out,*(&pos).to<int*>)
-}
-
-struct CONSOLE_CURSOR_INFO
-{
-	int dwSize
-	bool bVisible
-}
-
-struct COORD
-{
-	ushort x
-	ushort y
-}#include "C:/Users/Administrator/Desktop/rpp_v1.96/ext/mingw/gpp.h"
-
-struct rf
-{
-};
-struct rcode
-{
-};
-struct R_CRITICAL_SECTION
-{
-	char buf;
-	char buf_[23];
-};
-struct rmutex
-{
-	R_CRITICAL_SECTION m_mutex;
-};
-struct rbuf3Cushort3E
-{
-	void* m_p;
-	int m_count;
-	int m_max;
-	char m_block;
-	char m_block_[15];
-};
-struct rstrw
-{
-	rbuf3Cushort3E m_buf;
-};
-struct rmutex_t
-{
-	void* m_p;
-};
-struct rbuf3Cchar3E
-{
-	void* m_p;
-	int m_count;
-	int m_max;
-	char m_block;
-	char m_block_[15];
-};
-struct rstr
-{
-	rbuf3Cchar3E m_buf;
-};
-struct rbuf3Cint3E
-{
-	void* m_p;
-	int m_count;
-	int m_max;
-	char m_block;
-	char m_block_[15];
-};
-struct rbuf3Crstr3E
-{
-	void* m_p;
-	int m_count;
-	int m_max;
-	char m_block;
-	char m_block_[15];
-};
-struct xf
-{
-};
-struct _MAIN
-{
-};
-struct rbuf3Crp3Cchar3E3E
-{
-	void* m_p;
-	int m_count;
-	int m_max;
-	char m_block;
-	char m_block_[15];
-};
-
-_MAIN _PMAIN;
-
-void rp3Cchar3E2E3D28rp3Cchar3E262Crp3Cchar3E29(void*& this,void* a);
-void int2E3D28int262Cint29(int& this,int a);
-void rbuf3Cchar3E2Einit28rbuf3Cchar3E2629(rbuf3Cchar3E& this);
-void rbuf3Cchar3E2Erbuf3Cchar3E28rbuf3Cchar3E2629(rbuf3Cchar3E& this);
-void rstr2Erstr28rstr2629(rstr& this);
-int xf2Etick2829();
-int int2E3C3D28int2Cint29(int a,int b);
-void int2E2B3D28int262Cint29(int& this,int a);
-void int2E2B2B28int2629(int& this);
-int rp3Cvoid3E2E213D28rp3Cvoid3E2Crp3Cvoid3E29(void* a,void* b);
-void* rp3Cchar3E2Eto3Crp3Cchar3E3E28rp3Cchar3E2629(void*& this);
-void* rp3Cchar3E2E2D28rp3Cchar3E2Cint29(void* a,int b);
-void xf2Efree28rp3Cvoid3E29(void* p);
-void main2Er_delete_n3Cchar3E28rp3Cchar3E29(void* p);
-void main2Er_delete3Cchar3E28rp3Cchar3E29(void* p);
-void* char2E2628char2629(char& this);
-int rp3Cchar3E2E213D28rp3Cchar3E2Crp3Cchar3E29(void* a,void* b);
-void rbuf3Cchar3E2Ev_delete28rbuf3Cchar3E2629(rbuf3Cchar3E& this);
-void rbuf3Cchar3E2Efree_x28rbuf3Cchar3E2629(rbuf3Cchar3E& this);
-void rbuf3Cchar3E2E7Erbuf3Cchar3E28rbuf3Cchar3E2629(rbuf3Cchar3E& this);
-void rstr2E7Erstr28rstr2629(rstr& this);
-int int2E2A28int2Cint29(int a,int b);
-int int2E2B28int2Cint29(int a,int b);
-void* xf2Emalloc28int29(int size);
-void rp3Cchar3E2Erp3Cchar3E28rp3Cchar3E262Crp3Cchar3E29(void*& this,void* a);
-int rp3Cchar3E2E3D3D28rp3Cchar3E2Crp3Cchar3E29(void* a,void* b);
-void xf2Eprint28rp3Cchar3E29(void* s);
-void xf2Eexit28int29(int a);
-void* rp3Cchar3E2Eto3Crp3Cint3E3E28rp3Cchar3E2629(void*& this);
-void rp3Cint3E2Erp3Cint3E28rp3Cint3E262Crp3Cint3E29(void*& this,void* a);
-int& rp3Cint3E2E2A28rp3Cint3E2629(void*& this);
-void int2E3D28int262Cint2629(int& this,int& a);
-void* rp3Cchar3E2E2B28rp3Cchar3E2Cint29(void* a,int b);
-void* main2Er_new_n3Cchar3E28int29(int count);
-void* main2Er_new3Cchar3E28int29(int count);
-void* rbuf3Cchar3E2Ev_new28rbuf3Cchar3E262Cint29(rbuf3Cchar3E& this,int num);
-void rbuf3Cchar3E2Ealloc28rbuf3Cchar3E262Cint29(rbuf3Cchar3E& this,int num);
-void rbuf3Cchar3E2Erbuf3Cchar3E28rbuf3Cchar3E262Cint29(rbuf3Cchar3E& this,int num);
-void rp3Cchar3E2Erp3Cchar3E28rp3Cchar3E262Crp3Cchar3E2629(void*& this,void*& a);
-void* rbuf3Cchar3E2Ebegin28rbuf3Cchar3E2629(rbuf3Cchar3E& this);
-void xf2Eitoa28rp3Cvoid3E2Cint29(void* dst,int n);
-void* rp3Cvoid3E2Eto3Crp3Cchar3E3E28rp3Cvoid3E2629(void*& this);
-int xf2Estrlen28rp3Cchar3E29(void* s);
-int int2E3C28int2Cint29(int a,int b);
-void int2Eint28int262Cint2629(int& this,int& a);
-int main2Er_cond28int2Cint2Cint29(int cond,int a,int b);
-void int2Eint28int262Cint29(int& this,int a);
-int rbuf3Cchar3E2Eextend_num28int29(int num);
-int rp3Cvoid3E2E3D3D28rp3Cvoid3E2Crp3Cvoid3E29(void* a,void* b);
-void rbuf3Cchar3E2Ealloc_not_change28rbuf3Cchar3E262Cint29(rbuf3Cchar3E& this,int num);
-void rbuf3Cchar3E2Efree28rbuf3Cchar3E2629(rbuf3Cchar3E& this);
-void rbuf3Cchar3E2Erealloc_n_not_change28rbuf3Cchar3E262Cint29(rbuf3Cchar3E& this,int num);
-void xf2Ememcpy28rp3Cvoid3E2Crp3Cvoid3E2Cint29(void* dst,void* src,int size);
-void rstr2Eset28rstr262Crp3Cvoid3E29(rstr& this,void* p);
-void rstr2Erstr28rstr262Cint29(rstr& this,int i);
-int rbuf3Cchar3E2Ecount28rbuf3Cchar3E2629(rbuf3Cchar3E& this);
-int rstr2Ecount28rstr2629(rstr& this);
-void* rstr2Ebegin28rstr2629(rstr& this);
-void rstr2Erstr28rstr262Crstr2629(rstr& this,rstr& s);
-void rstr2Erstr28rstr262Crp3Cchar3E29(rstr& this,void* p);
-int int2E3E28int2Cint29(int a,int b);
-rstr rstr2E2B28rstr262Crstr2629(rstr& a,rstr& b);
-char int2Etochar28int2629(int& this);
-void char2Echar28char262Cchar29(char& this,char a);
-char int2Eto3Cchar3E28int2629(int& this);
-int int2E3E3D28int2Cint29(int a,int b);
-char& rp3Cchar3E2E5B5D28rp3Cchar3E262Cint29(void*& this,int a);
-void char2E3D28char262Cchar2629(char& this,char& a);
-void rp3Cchar3E2E3D28rp3Cchar3E262Crp3Cchar3E2629(void*& this,void*& a);
-void rbuf3Cchar3E2Erealloc_not_change_in28rbuf3Cchar3E262Cint29(rbuf3Cchar3E& this,int num);
-void rbuf3Cchar3E2Erealloc_not_change28rbuf3Cchar3E262Cint29(rbuf3Cchar3E& this,int num);
-void rbuf3Cchar3E2Epush28rbuf3Cchar3E262Cchar2629(rbuf3Cchar3E& this,char& a);
-void rstr2Epush28rstr262Cchar29(rstr& this,char ch);
-void int2E2D2D28int2629(int& this);
-void char2Echar28char262Cchar2629(char& this,char& a);
-char rbuf3Cchar3E2Epop28rbuf3Cchar3E2629(rbuf3Cchar3E& this);
-char rstr2Epop28rstr2629(rstr& this);
-void* rstr2Ecstr28rstr2629(rstr& this);
-void rf2Eprint28rstr29(rstr s);
-void rf2Eprintl28rstr29(rstr s);
-void main2Eprintl28rstr29(rstr s);
-int int2E2D28int2Cint29(int a,int b);
-void main2Emain2829();
-
-int main(){main2Emain2829();return 0;}
-
-void main2Emain2829()
-{
-	rstr _GPARAM0 ;
-	rstr _GPARAM1 ;
-	int ebx;
-	int start;
-	int sum;
-	int i;
-	int j;
-	rstr _TEMP0;
-	rstr _TEMP1;
-
-	rstr2Erstr28rstr2629 ( _TEMP0 ) ;
-	rstr2Erstr28rstr2629 ( _TEMP1 ) ;
-	int2E3D28int262Cint29 ( start , xf2Etick2829 ( ) ) ;
-	int2E3D28int262Cint29 ( sum , 0u ) ;
-	int2E3D28int262Cint29 ( i , 0u ) ;
-_for_judge_0 : ;
-	ebx = int2E3C3D28int2Cint29 ( i , 10000u ) ;
-	if ( ! ebx ) jmp _for_end_0 ;
-	int2E3D28int262Cint29 ( j , 0u ) ;
-_for_judge_1 : ;
-	ebx = int2E3C3D28int2Cint29 ( j , 10000u ) ;
-	if ( ! ebx ) jmp _for_end_1 ;
-	int2E2B3D28int262Cint29 ( sum , i ) ;
-_for_add_1 : ;
-	int2E2B2B28int2629 ( j ) ;
-	jmp _for_judge_1 ;
-_for_end_1 : ;
-_for_add_0 : ;
-	int2E2B2B28int2629 ( i ) ;
-	jmp _for_judge_0 ;
-_for_end_0 : ;
-	rstr2E7Erstr28rstr2629 ( _TEMP0 ) ;
-	rstr2Erstr28rstr262Cint29 ( _TEMP0 , sum ) ;
-	rstr2Erstr28rstr262Crstr2629 ( _GPARAM0 , _TEMP0 ) ;
-	main2Eprintl28rstr29 ( _GPARAM0 ) ;
-	rstr2E7Erstr28rstr2629 ( _TEMP1 ) ;
-	rstr2Erstr28rstr262Cint29 ( _TEMP1 , int2E2D28int2Cint29 ( xf2Etick2829 ( ) , start ) ) ;
-	rstr2Erstr28rstr262Crstr2629 ( _GPARAM1 , _TEMP1 ) ;
-	main2Eprintl28rstr29 ( _GPARAM1 ) ;
-_func_end : ;
-	rstr2E7Erstr28rstr2629 ( _TEMP0 ) ;
-	rstr2E7Erstr28rstr2629 ( _TEMP1 ) ;
-}
-
-void rstr2Erstr28rstr2629(rstr& this)
-{
-	int ebx;
-
-	rbuf3Cchar3E2Erbuf3Cchar3E28rbuf3Cchar3E2629 ( this . m_buf ) ;
-_func_end : ;
-}
-
-void rbuf3Cchar3E2Erbuf3Cchar3E28rbuf3Cchar3E2629(rbuf3Cchar3E& this)
-{
-	int ebx;
-
-	rbuf3Cchar3E2Einit28rbuf3Cchar3E2629 ( this ) ;
-_func_end : ;
-}
-
-void rbuf3Cchar3E2Einit28rbuf3Cchar3E2629(rbuf3Cchar3E& this)
-{
-	int ebx;
-
-	rp3Cchar3E2E3D28rp3Cchar3E262Crp3Cchar3E29 ( this . m_p , (void*)0 ) ;
-	int2E3D28int262Cint29 ( this . m_count , 0u ) ;
-	int2E3D28int262Cint29 ( this . m_max , 0u ) ;
-_func_end : ;
-}
-
-void rp3Cchar3E2E3D28rp3Cchar3E262Crp3Cchar3E29(void*& this,void* a)
-{
-this = a ;
-}
-
-void int2E3D28int262Cint29(int& this,int a)
-{
-this = a ;
-}
-
-int xf2Etick2829()
-{
-return GetTickCount ( ) ;
-}
-
-int int2E3C3D28int2Cint29(int a,int b)
-{
-return a <= b ;
-}
-
-void int2E2B3D28int262Cint29(int& this,int a)
-{
-this += a ;
-}
-
-void int2E2B2B28int2629(int& this)
-{
-this ++ ;
-}
-
-void rstr2E7Erstr28rstr2629(rstr& this)
-{
-	int ebx;
-
-_func_end : ;
-	rbuf3Cchar3E2E7Erbuf3Cchar3E28rbuf3Cchar3E2629 ( this . m_buf ) ;
-}
-
-void rbuf3Cchar3E2E7Erbuf3Cchar3E28rbuf3Cchar3E2629(rbuf3Cchar3E& this)
-{
-	int ebx;
-
-	rbuf3Cchar3E2Efree_x28rbuf3Cchar3E2629 ( this ) ;
-_func_end : ;
-}
-
-void rbuf3Cchar3E2Efree_x28rbuf3Cchar3E2629(rbuf3Cchar3E& this)
-{
-	int ebx;
-
-	ebx = rp3Cvoid3E2E213D28rp3Cvoid3E2Crp3Cvoid3E29 ( (void*)0 , this . m_p ) ;
-	if ( ! ebx ) jmp _else_start_0 ;
-	rbuf3Cchar3E2Ev_delete28rbuf3Cchar3E2629 ( this ) ;
-	jmp _else_end_0 ;
-_else_start_0 : ;
-_else_end_0 : ;
-_func_end : ;
-}
-
-int rp3Cvoid3E2E213D28rp3Cvoid3E2Crp3Cvoid3E29(void* a,void* b)
-{
-return a != b ;
-}
-
-void rbuf3Cchar3E2Ev_delete28rbuf3Cchar3E2629(rbuf3Cchar3E& this)
-{
-	int ebx;
-
-	main2Er_delete3Cchar3E28rp3Cchar3E29 ( this . m_p ) ;
-	jmp _func_end ;
-	ebx = rp3Cchar3E2E213D28rp3Cchar3E2Crp3Cchar3E29 ( this . m_p , char2E2628char2629 ( this . m_block ) ) ;
-	if ( ! ebx ) jmp _else_start_0 ;
-	main2Er_delete3Cchar3E28rp3Cchar3E29 ( this . m_p ) ;
-	jmp _else_end_0 ;
-_else_start_0 : ;
-_else_end_0 : ;
-_func_end : ;
-}
-
-void main2Er_delete3Cchar3E28rp3Cchar3E29(void* p)
-{
-	int ebx;
-
-	main2Er_delete_n3Cchar3E28rp3Cchar3E29 ( p ) ;
-_func_end : ;
-}
-
-void main2Er_delete_n3Cchar3E28rp3Cchar3E29(void* p)
-{
-	int ebx;
-
-	xf2Efree28rp3Cvoid3E29 ( rp3Cchar3E2E2D28rp3Cchar3E2Cint29 ( rp3Cchar3E2Eto3Crp3Cchar3E3E28rp3Cchar3E2629 ( p ) , 4u ) ) ;
-_func_end : ;
-}
-
-void* rp3Cchar3E2Eto3Crp3Cchar3E3E28rp3Cchar3E2629(void*& this)
-{
-return this ;
-}
-
-void* rp3Cchar3E2E2D28rp3Cchar3E2Cint29(void* a,int b)
-{
-return ( ( CHAR * ) a ) - R_SIZE ( char ) * b ;
-}
-
-void xf2Efree28rp3Cvoid3E29(void* p)
-{
-free ( p ) ;
-}
-
-void* char2E2628char2629(char& this)
-{
-return & this ;
-}
-
-int rp3Cchar3E2E213D28rp3Cchar3E2Crp3Cchar3E29(void* a,void* b)
-{
-return a != b ;
-}
-
-void rstr2Erstr28rstr262Cint29(rstr& this,int i)
-{
-	int ebx;
-	rbuf3Cchar3E tmp;
-
-	rbuf3Cchar3E2Erbuf3Cchar3E28rbuf3Cchar3E2629 ( this . m_buf ) ;
-	rbuf3Cchar3E2Erbuf3Cchar3E28rbuf3Cchar3E2629 ( tmp ) ;
-	rbuf3Cchar3E2E7Erbuf3Cchar3E28rbuf3Cchar3E2629 ( tmp ) ;
-	rbuf3Cchar3E2Erbuf3Cchar3E28rbuf3Cchar3E262Cint29 ( tmp , 32u ) ;
-	xf2Eitoa28rp3Cvoid3E2Cint29 ( rbuf3Cchar3E2Ebegin28rbuf3Cchar3E2629 ( tmp ) , i ) ;
-	rstr2Eset28rstr262Crp3Cvoid3E29 ( this , rbuf3Cchar3E2Ebegin28rbuf3Cchar3E2629 ( tmp ) ) ;
-_func_end : ;
-	rbuf3Cchar3E2E7Erbuf3Cchar3E28rbuf3Cchar3E2629 ( tmp ) ;
-}
-
-void rbuf3Cchar3E2Erbuf3Cchar3E28rbuf3Cchar3E262Cint29(rbuf3Cchar3E& this,int num)
-{
-	int ebx;
-
-	rbuf3Cchar3E2Einit28rbuf3Cchar3E2629 ( this ) ;
-	rbuf3Cchar3E2Ealloc28rbuf3Cchar3E262Cint29 ( this , num ) ;
-_func_end : ;
-}
-
-void rbuf3Cchar3E2Ealloc28rbuf3Cchar3E262Cint29(rbuf3Cchar3E& this,int num)
-{
-	int ebx;
-
-	ebx = rp3Cchar3E2E213D28rp3Cchar3E2Crp3Cchar3E29 ( this . m_p , (void*)0 ) ;
-	if ( ! ebx ) jmp _else_start_0 ;
-	jmp _func_end ;
-	jmp _else_end_0 ;
-_else_start_0 : ;
-_else_end_0 : ;
-	ebx = int2E3C3D28int2Cint29 ( num , 0u ) ;
-	if ( ! ebx ) jmp _else_start_1 ;
-	rbuf3Cchar3E2Einit28rbuf3Cchar3E2629 ( this ) ;
-	jmp _func_end ;
-	jmp _else_end_1 ;
-_else_start_1 : ;
-_else_end_1 : ;
-	rp3Cchar3E2E3D28rp3Cchar3E262Crp3Cchar3E29 ( this . m_p , rbuf3Cchar3E2Ev_new28rbuf3Cchar3E262Cint29 ( this , num ) ) ;
-	int2E3D28int262Cint2629 ( this . m_max , num ) ;
-	int2E3D28int262Cint2629 ( this . m_count , this . m_max ) ;
-_func_end : ;
-}
-
-void* rbuf3Cchar3E2Ev_new28rbuf3Cchar3E262Cint29(rbuf3Cchar3E& this,int num)
-{
-	int ebx;
-	void* s_ret;
-
-	rp3Cchar3E2Erp3Cchar3E28rp3Cchar3E262Crp3Cchar3E29 ( s_ret , main2Er_new3Cchar3E28int29 ( num ) ) ;
-	jmp _func_end ;
-	ebx = int2E3C3D28int2Cint29 ( int2E2A28int2Cint29 ( num , 1u ) , 16u ) ;
-	if ( ! ebx ) jmp _else_start_0 ;
-	rp3Cchar3E2Erp3Cchar3E28rp3Cchar3E262Crp3Cchar3E29 ( s_ret , char2E2628char2629 ( this . m_block ) ) ;
-	jmp _func_end ;
-	jmp _else_end_0 ;
-_else_start_0 : ;
-_else_end_0 : ;
-	rp3Cchar3E2Erp3Cchar3E28rp3Cchar3E262Crp3Cchar3E29 ( s_ret , main2Er_new3Cchar3E28int29 ( num ) ) ;
-	jmp _func_end ;
-_func_end : ;
-	return s_ret;
-}
-
-void* main2Er_new3Cchar3E28int29(int count)
-{
-	int ebx;
-	void* s_ret;
-
-	rp3Cchar3E2Erp3Cchar3E28rp3Cchar3E262Crp3Cchar3E29 ( s_ret , main2Er_new_n3Cchar3E28int29 ( count ) ) ;
-	jmp _func_end ;
-_func_end : ;
-	return s_ret;
-}
-
-void* main2Er_new_n3Cchar3E28int29(int count)
-{
-	int ebx;
-	void* s_ret;
-	void* p;
-	void* _TEMP0;
-	void* _TEMP1;
-	void* _TEMP2;
-
-	rp3Cchar3E2Erp3Cchar3E28rp3Cchar3E262Crp3Cchar3E29 ( _TEMP0 , xf2Emalloc28int29 ( int2E2B28int2Cint29 ( 4u , int2E2A28int2Cint29 ( count , 1u ) ) ) ) ;
-	rp3Cchar3E2E3D28rp3Cchar3E262Crp3Cchar3E29 ( p , rp3Cchar3E2Eto3Crp3Cchar3E3E28rp3Cchar3E2629 ( _TEMP0 ) ) ;
-	ebx = rp3Cchar3E2E3D3D28rp3Cchar3E2Crp3Cchar3E29 ( p , (void*)0 ) ;
-	if ( ! ebx ) jmp _else_start_0 ;
-	xf2Eprint28rp3Cchar3E29 ( (void*)"memory insufficient" ) ;
-	xf2Eexit28int29 ( 1u ) ;
-	rp3Cchar3E2Erp3Cchar3E28rp3Cchar3E262Crp3Cchar3E29 ( s_ret , (void*)0 ) ;
-	jmp _func_end ;
-	jmp _else_end_0 ;
-_else_start_0 : ;
-_else_end_0 : ;
-	rp3Cint3E2Erp3Cint3E28rp3Cint3E262Crp3Cint3E29 ( _TEMP1 , rp3Cchar3E2Eto3Crp3Cint3E3E28rp3Cchar3E2629 ( p ) ) ;
-	int2E3D28int262Cint2629 ( rp3Cint3E2E2A28rp3Cint3E2629 ( _TEMP1 ) , count ) ;
-	rp3Cchar3E2Erp3Cchar3E28rp3Cchar3E262Crp3Cchar3E29 ( _TEMP2 , rp3Cchar3E2E2B28rp3Cchar3E2Cint29 ( rp3Cchar3E2Eto3Crp3Cchar3E3E28rp3Cchar3E2629 ( p ) , 4u ) ) ;
-	rp3Cchar3E2Erp3Cchar3E28rp3Cchar3E262Crp3Cchar3E29 ( s_ret , rp3Cchar3E2Eto3Crp3Cchar3E3E28rp3Cchar3E2629 ( _TEMP2 ) ) ;
-	jmp _func_end ;
-_func_end : ;
-	return s_ret;
-}
-
-int int2E2A28int2Cint29(int a,int b)
-{
-return a * b ;
-}
-
-int int2E2B28int2Cint29(int a,int b)
-{
-return a + b ;
-}
-
-void* xf2Emalloc28int29(int size)
-{
-return malloc ( size ) ;
-}
-
-void rp3Cchar3E2Erp3Cchar3E28rp3Cchar3E262Crp3Cchar3E29(void*& this,void* a)
-{
-this = a ;
-}
-
-int rp3Cchar3E2E3D3D28rp3Cchar3E2Crp3Cchar3E29(void* a,void* b)
-{
-return a == b ;
-}
-
-void xf2Eprint28rp3Cchar3E29(void* s)
-{
-printf ( "%s" , s ) ;
-}
-
-void xf2Eexit28int29(int a)
-{
-exit ( a ) ;
-}
-
-void* rp3Cchar3E2Eto3Crp3Cint3E3E28rp3Cchar3E2629(void*& this)
-{
-return this ;
-}
-
-void rp3Cint3E2Erp3Cint3E28rp3Cint3E262Crp3Cint3E29(void*& this,void* a)
-{
-this = a ;
-}
-
-int& rp3Cint3E2E2A28rp3Cint3E2629(void*& this)
-{
-return *(int*)this;
-}
-
-void int2E3D28int262Cint2629(int& this,int& a)
-{
-this = a ;
-}
-
-void* rp3Cchar3E2E2B28rp3Cchar3E2Cint29(void* a,int b)
-{
-return ( ( CHAR * ) a ) + R_SIZE ( char ) * b ;
-}
-
-void* rbuf3Cchar3E2Ebegin28rbuf3Cchar3E2629(rbuf3Cchar3E& this)
-{
-	int ebx;
-	void* s_ret;
-
-	rp3Cchar3E2Erp3Cchar3E28rp3Cchar3E262Crp3Cchar3E2629 ( s_ret , this . m_p ) ;
-	jmp _func_end ;
-_func_end : ;
-	return s_ret;
-}
-
-void rp3Cchar3E2Erp3Cchar3E28rp3Cchar3E262Crp3Cchar3E2629(void*& this,void*& a)
-{
-this = a ;
-}
-
-void xf2Eitoa28rp3Cvoid3E2Cint29(void* dst,int n)
-{
-sprintf ( ( CHAR * ) dst , "%d" , n ) ;
-}
-
-void rstr2Eset28rstr262Crp3Cvoid3E29(rstr& this,void* p)
-{
-	int ebx;
-	int len;
-
-	int2E3D28int262Cint29 ( len , xf2Estrlen28rp3Cchar3E29 ( rp3Cvoid3E2Eto3Crp3Cchar3E3E28rp3Cvoid3E2629 ( p ) ) ) ;
-	rbuf3Cchar3E2Erealloc_n_not_change28rbuf3Cchar3E262Cint29 ( this . m_buf , rbuf3Cchar3E2Eextend_num28int29 ( len ) ) ;
-	int2E3D28int262Cint2629 ( this . m_buf . m_count , len ) ;
-	xf2Ememcpy28rp3Cvoid3E2Crp3Cvoid3E2Cint29 ( rbuf3Cchar3E2Ebegin28rbuf3Cchar3E2629 ( this . m_buf ) , p , len ) ;
-_func_end : ;
-}
-
-void* rp3Cvoid3E2Eto3Crp3Cchar3E3E28rp3Cvoid3E2629(void*& this)
-{
-return this ;
-}
-
-int xf2Estrlen28rp3Cchar3E29(void* s)
-{
-return strlen ( ( CHAR * ) s ) ;
-}
-
-int rbuf3Cchar3E2Eextend_num28int29(int num)
-{
-	int ebx;
-	int s_ret;
-
-	int2Eint28int262Cint29 ( s_ret , main2Er_cond28int2Cint2Cint29 ( int2E3C28int2Cint29 ( num , 16u ) , 16u , int2E2A28int2Cint29 ( num , 2u ) ) ) ;
-	jmp _func_end ;
-_func_end : ;
-	return s_ret;
-}
-
-int int2E3C28int2Cint29(int a,int b)
-{
-return a < b ;
-}
-
-int main2Er_cond28int2Cint2Cint29(int cond,int a,int b)
-{
-	int ebx;
-	int s_ret;
-
-	ebx = cond ;
-	if ( ! ebx ) jmp _else_start_0 ;
-	int2Eint28int262Cint2629 ( s_ret , a ) ;
-	jmp _func_end ;
-	jmp _else_end_0 ;
-_else_start_0 : ;
-_else_end_0 : ;
-	int2Eint28int262Cint2629 ( s_ret , b ) ;
-	jmp _func_end ;
-_func_end : ;
-	return s_ret;
-}
-
-void int2Eint28int262Cint2629(int& this,int& a)
-{
-this = a ;
-}
-
-void int2Eint28int262Cint29(int& this,int a)
-{
-this = a ;
-}
-
-void rbuf3Cchar3E2Erealloc_n_not_change28rbuf3Cchar3E262Cint29(rbuf3Cchar3E& this,int num)
-{
-	int ebx;
-
-	ebx = rp3Cvoid3E2E3D3D28rp3Cvoid3E2Crp3Cvoid3E29 ( (void*)0 , this . m_p ) ;
-	if ( ! ebx ) jmp _else_start_0 ;
-	rbuf3Cchar3E2Ealloc_not_change28rbuf3Cchar3E262Cint29 ( this , num ) ;
-	jmp _func_end ;
-	jmp _else_end_0 ;
-_else_start_0 : ;
-_else_end_0 : ;
-	ebx = int2E3C3D28int2Cint29 ( num , 0u ) ;
-	if ( ! ebx ) jmp _else_start_1 ;
-	rbuf3Cchar3E2Efree28rbuf3Cchar3E2629 ( this ) ;
-	jmp _func_end ;
-	jmp _else_end_1 ;
-_else_start_1 : ;
-_else_end_1 : ;
-	rbuf3Cchar3E2Ev_delete28rbuf3Cchar3E2629 ( this ) ;
-	rp3Cchar3E2E3D28rp3Cchar3E262Crp3Cchar3E29 ( this . m_p , rbuf3Cchar3E2Ev_new28rbuf3Cchar3E262Cint29 ( this , num ) ) ;
-	int2E3D28int262Cint2629 ( this . m_max , num ) ;
-_func_end : ;
-}
-
-int rp3Cvoid3E2E3D3D28rp3Cvoid3E2Crp3Cvoid3E29(void* a,void* b)
-{
-return a == b ;
-}
-
-void rbuf3Cchar3E2Ealloc_not_change28rbuf3Cchar3E262Cint29(rbuf3Cchar3E& this,int num)
-{
-	int ebx;
-
-	ebx = rp3Cchar3E2E213D28rp3Cchar3E2Crp3Cchar3E29 ( this . m_p , (void*)0 ) ;
-	if ( ! ebx ) jmp _else_start_0 ;
-	jmp _func_end ;
-	jmp _else_end_0 ;
-_else_start_0 : ;
-_else_end_0 : ;
-	ebx = int2E3C3D28int2Cint29 ( num , 0u ) ;
-	if ( ! ebx ) jmp _else_start_1 ;
-	rbuf3Cchar3E2Einit28rbuf3Cchar3E2629 ( this ) ;
-	jmp _func_end ;
-	jmp _else_end_1 ;
-_else_start_1 : ;
-_else_end_1 : ;
-	rp3Cchar3E2E3D28rp3Cchar3E262Crp3Cchar3E29 ( this . m_p , rbuf3Cchar3E2Ev_new28rbuf3Cchar3E262Cint29 ( this , num ) ) ;
-	int2E3D28int262Cint2629 ( this . m_max , num ) ;
-_func_end : ;
-}
-
-void rbuf3Cchar3E2Efree28rbuf3Cchar3E2629(rbuf3Cchar3E& this)
-{
-	int ebx;
-
-	rbuf3Cchar3E2Efree_x28rbuf3Cchar3E2629 ( this ) ;
-	rbuf3Cchar3E2Einit28rbuf3Cchar3E2629 ( this ) ;
-_func_end : ;
-}
-
-void xf2Ememcpy28rp3Cvoid3E2Crp3Cvoid3E2Cint29(void* dst,void* src,int size)
-{
-memcpy ( dst , src , size ) ;
-}
-
-void rstr2Erstr28rstr262Crstr2629(rstr& this,rstr& s)
-{
-	int ebx;
-
-	rbuf3Cchar3E2Erbuf3Cchar3E28rbuf3Cchar3E2629 ( this . m_buf ) ;
-	rbuf3Cchar3E2Ealloc_not_change28rbuf3Cchar3E262Cint29 ( this . m_buf , s . m_buf . m_max ) ;
-	int2E3D28int262Cint29 ( this . m_buf . m_count , rstr2Ecount28rstr2629 ( s ) ) ;
-	xf2Ememcpy28rp3Cvoid3E2Crp3Cvoid3E2Cint29 ( rstr2Ebegin28rstr2629 ( this ) , rstr2Ebegin28rstr2629 ( s ) , rstr2Ecount28rstr2629 ( s ) ) ;
-_func_end : ;
-}
-
-int rstr2Ecount28rstr2629(rstr& this)
-{
-	int ebx;
-	int s_ret;
-
-	int2Eint28int262Cint29 ( s_ret , rbuf3Cchar3E2Ecount28rbuf3Cchar3E2629 ( this . m_buf ) ) ;
-	jmp _func_end ;
-_func_end : ;
-	return s_ret;
-}
-
-int rbuf3Cchar3E2Ecount28rbuf3Cchar3E2629(rbuf3Cchar3E& this)
-{
-	int ebx;
-	int s_ret;
-
-	int2Eint28int262Cint2629 ( s_ret , this . m_count ) ;
-	jmp _func_end ;
-_func_end : ;
-	return s_ret;
-}
-
-void* rstr2Ebegin28rstr2629(rstr& this)
-{
-	int ebx;
-	void* s_ret;
-
-	rp3Cchar3E2Erp3Cchar3E28rp3Cchar3E262Crp3Cchar3E29 ( s_ret , rbuf3Cchar3E2Ebegin28rbuf3Cchar3E2629 ( this . m_buf ) ) ;
-	jmp _func_end ;
-_func_end : ;
-	return s_ret;
-}
-
-void main2Eprintl28rstr29(rstr s)
-{
-	rstr _GPARAM0 ;
-	int ebx;
-
-	rstr2Erstr28rstr262Crstr2629 ( _GPARAM0 , s ) ;
-	rf2Eprintl28rstr29 ( _GPARAM0 ) ;
-_func_end : ;
-	rstr2E7Erstr28rstr2629 ( s ) ;
-}
-
-void rf2Eprintl28rstr29(rstr s)
-{
-	rstr _GRET0 ;
-	rstr _GPARAM1 ;
-	int ebx;
-	rstr _TEMP0;
-
-	rstr2Erstr28rstr2629 ( _TEMP0 ) ;
-	rstr2E7Erstr28rstr2629 ( _TEMP0 ) ;
-	rstr2Erstr28rstr262Crp3Cchar3E29 ( _TEMP0 , (void*)"\n" ) ;
-	_GRET0 = rstr2E2B28rstr262Crstr2629 ( s , _TEMP0 ) ;
-	rstr2Erstr28rstr262Crstr2629 ( _GPARAM1 , _GRET0 ) ;
-	rf2Eprint28rstr29 ( _GPARAM1 ) ;
-	rstr2E7Erstr28rstr2629 ( _GRET0 ) ;
-_func_end : ;
-	rstr2E7Erstr28rstr2629 ( s ) ;
-	rstr2E7Erstr28rstr2629 ( _TEMP0 ) ;
-}
-
-void rstr2Erstr28rstr262Crp3Cchar3E29(rstr& this,void* p)
-{
-	int ebx;
-
-	rbuf3Cchar3E2Erbuf3Cchar3E28rbuf3Cchar3E2629 ( this . m_buf ) ;
-	rstr2Eset28rstr262Crp3Cvoid3E29 ( this , p ) ;
-_func_end : ;
-}
-
-rstr rstr2E2B28rstr262Crstr2629(rstr& a,rstr& b)
-{
-	int ebx;
-	rstr s_ret;
-	int total;
-	int max;
-	rstr ret;
-
-	rstr2Erstr28rstr2629 ( ret ) ;
-	int2E3D28int262Cint29 ( total , int2E2B28int2Cint29 ( rstr2Ecount28rstr2629 ( a ) , rstr2Ecount28rstr2629 ( b ) ) ) ;
-	int2E3D28int262Cint29 ( max , main2Er_cond28int2Cint2Cint29 ( int2E3E28int2Cint29 ( a . m_buf . m_max , b . m_buf . m_max ) , a . m_buf . m_max , b . m_buf . m_max ) ) ;
-	rstr2E7Erstr28rstr2629 ( ret ) ;
-	rstr2Erstr28rstr2629 ( ret ) ;
-	ebx = int2E3E28int2Cint29 ( total , max ) ;
-	if ( ! ebx ) jmp _else_start_0 ;
-	rbuf3Cchar3E2Ealloc_not_change28rbuf3Cchar3E262Cint29 ( ret . m_buf , rbuf3Cchar3E2Eextend_num28int29 ( total ) ) ;
-	jmp _else_end_0 ;
-_else_start_0 : ;
-	rbuf3Cchar3E2Ealloc_not_change28rbuf3Cchar3E262Cint29 ( ret . m_buf , max ) ;
-_else_end_0 : ;
-	int2E3D28int262Cint2629 ( ret . m_buf . m_count , total ) ;
-	xf2Ememcpy28rp3Cvoid3E2Crp3Cvoid3E2Cint29 ( rstr2Ebegin28rstr2629 ( ret ) , rstr2Ebegin28rstr2629 ( a ) , a . m_buf . m_count ) ;
-	xf2Ememcpy28rp3Cvoid3E2Crp3Cvoid3E2Cint29 ( rp3Cchar3E2E2B28rp3Cchar3E2Cint29 ( rstr2Ebegin28rstr2629 ( ret ) , a . m_buf . m_count ) , rstr2Ebegin28rstr2629 ( b ) , b . m_buf . m_count ) ;
-	rstr2Erstr28rstr262Crstr2629 ( s_ret , ret ) ;
-	jmp _func_end ;
-_func_end : ;
-	rstr2E7Erstr28rstr2629 ( ret ) ;
-	return s_ret;
-}
-
-int int2E3E28int2Cint29(int a,int b)
-{
-return a > b ;
-}
-
-void rf2Eprint28rstr29(rstr s)
-{
-	int ebx;
-	void* _TEMP0;
-
-	rp3Cchar3E2Erp3Cchar3E28rp3Cchar3E262Crp3Cchar3E29 ( _TEMP0 , rstr2Ecstr28rstr2629 ( s ) ) ;
-	xf2Eprint28rp3Cchar3E29 ( rp3Cchar3E2Eto3Crp3Cchar3E3E28rp3Cchar3E2629 ( _TEMP0 ) ) ;
-_func_end : ;
-	rstr2E7Erstr28rstr2629 ( s ) ;
-}
-
-void* rstr2Ecstr28rstr2629(rstr& this)
-{
-	int ebx;
-	void* s_ret;
-	int _TEMP0;
-
-	int2Eint28int262Cint29 ( _TEMP0 , 0u ) ;
-	rstr2Epush28rstr262Cchar29 ( this , int2Eto3Cchar3E28int2629 ( _TEMP0 ) ) ;
-	rstr2Epop28rstr2629 ( this ) ;
-	rp3Cchar3E2Erp3Cchar3E28rp3Cchar3E262Crp3Cchar3E29 ( s_ret , rstr2Ebegin28rstr2629 ( this ) ) ;
-	jmp _func_end ;
-_func_end : ;
-	return s_ret;
-}
-
-char int2Eto3Cchar3E28int2629(int& this)
-{
-	int ebx;
-	char s_ret;
-
-	char2Echar28char262Cchar29 ( s_ret , int2Etochar28int2629 ( this ) ) ;
-	jmp _func_end ;
-_func_end : ;
-	return s_ret;
-}
-
-char int2Etochar28int2629(int& this)
-{
-return ( char ) this ;
-}
-
-void char2Echar28char262Cchar29(char& this,char a)
-{
-this = a ;
-}
-
-void rstr2Epush28rstr262Cchar29(rstr& this,char ch)
-{
-	int ebx;
-
-	rbuf3Cchar3E2Epush28rbuf3Cchar3E262Cchar2629 ( this . m_buf , ch ) ;
-_func_end : ;
-}
-
-void rbuf3Cchar3E2Epush28rbuf3Cchar3E262Cchar2629(rbuf3Cchar3E& this,char& a)
-{
-	int ebx;
-
-	ebx = int2E3E3D28int2Cint29 ( this . m_count , this . m_max ) ;
-	if ( ! ebx ) jmp _else_start_0 ;
-	rbuf3Cchar3E2Erealloc_not_change28rbuf3Cchar3E262Cint29 ( this , rbuf3Cchar3E2Eextend_num28int29 ( this . m_count ) ) ;
-	jmp _else_end_0 ;
-_else_start_0 : ;
-_else_end_0 : ;
-	char2E3D28char262Cchar2629 ( rp3Cchar3E2E5B5D28rp3Cchar3E262Cint29 ( this . m_p , rbuf3Cchar3E2Ecount28rbuf3Cchar3E2629 ( this ) ) , a ) ;
-	int2E2B2B28int2629 ( this . m_count ) ;
-_func_end : ;
-}
-
-int int2E3E3D28int2Cint29(int a,int b)
-{
-return a >= b ;
-}
-
-void rbuf3Cchar3E2Erealloc_not_change28rbuf3Cchar3E262Cint29(rbuf3Cchar3E& this,int num)
-{
-	int ebx;
-
-	ebx = rp3Cvoid3E2E3D3D28rp3Cvoid3E2Crp3Cvoid3E29 ( (void*)0 , this . m_p ) ;
-	if ( ! ebx ) jmp _else_start_0 ;
-	rbuf3Cchar3E2Ealloc_not_change28rbuf3Cchar3E262Cint29 ( this , num ) ;
-	jmp _func_end ;
-	jmp _else_end_0 ;
-_else_start_0 : ;
-_else_end_0 : ;
-	ebx = int2E3C3D28int2Cint29 ( num , 0u ) ;
-	if ( ! ebx ) jmp _else_start_1 ;
-	rbuf3Cchar3E2Efree28rbuf3Cchar3E2629 ( this ) ;
-	jmp _func_end ;
-	jmp _else_end_1 ;
-_else_start_1 : ;
-_else_end_1 : ;
-	rbuf3Cchar3E2Erealloc_not_change_in28rbuf3Cchar3E262Cint29 ( this , num ) ;
-_func_end : ;
-}
-
-void rbuf3Cchar3E2Erealloc_not_change_in28rbuf3Cchar3E262Cint29(rbuf3Cchar3E& this,int num)
-{
-	int ebx;
-	void* p;
-	int copy_size;
-	int i;
-
-	rp3Cchar3E2E3D28rp3Cchar3E262Crp3Cchar3E29 ( p , rbuf3Cchar3E2Ev_new28rbuf3Cchar3E262Cint29 ( this , num ) ) ;
-	int2E3D28int262Cint29 ( copy_size , main2Er_cond28int2Cint2Cint29 ( int2E3C28int2Cint29 ( num , this . m_count ) , num , this . m_count ) ) ;
-	int2E3D28int262Cint29 ( i , 0u ) ;
-_for_judge_0 : ;
-	ebx = int2E3C28int2Cint29 ( i , copy_size ) ;
-	if ( ! ebx ) jmp _for_end_0 ;
-	char2E3D28char262Cchar2629 ( rp3Cchar3E2E5B5D28rp3Cchar3E262Cint29 ( p , i ) , rp3Cchar3E2E5B5D28rp3Cchar3E262Cint29 ( this . m_p , i ) ) ;
-_for_add_0 : ;
-	int2E2B2B28int2629 ( i ) ;
-	jmp _for_judge_0 ;
-_for_end_0 : ;
-	rbuf3Cchar3E2Ev_delete28rbuf3Cchar3E2629 ( this ) ;
-	rp3Cchar3E2E3D28rp3Cchar3E262Crp3Cchar3E2629 ( this . m_p , p ) ;
-	int2E3D28int262Cint2629 ( this . m_max , num ) ;
-_func_end : ;
-}
-
-char& rp3Cchar3E2E5B5D28rp3Cchar3E262Cint29(void*& this,int a)
-{
-return * ( char R_P ) ( ( ( CHAR * ) this ) + R_SIZE ( char ) * a ) ;
-}
-
-void char2E3D28char262Cchar2629(char& this,char& a)
-{
-this = a ;
-}
-
-void rp3Cchar3E2E3D28rp3Cchar3E262Crp3Cchar3E2629(void*& this,void*& a)
-{
-this = a ;
-}
-
-char rstr2Epop28rstr2629(rstr& this)
-{
-	int ebx;
-	char s_ret;
-
-	char2Echar28char262Cchar29 ( s_ret , rbuf3Cchar3E2Epop28rbuf3Cchar3E2629 ( this . m_buf ) ) ;
-	jmp _func_end ;
-_func_end : ;
-	return s_ret;
-}
-
-char rbuf3Cchar3E2Epop28rbuf3Cchar3E2629(rbuf3Cchar3E& this)
-{
-	int ebx;
-	char s_ret;
-
-	int2E2D2D28int2629 ( this . m_count ) ;
-	char2Echar28char262Cchar2629 ( s_ret , rp3Cchar3E2E5B5D28rp3Cchar3E262Cint29 ( this . m_p , rbuf3Cchar3E2Ecount28rbuf3Cchar3E2629 ( this ) ) ) ;
-	jmp _func_end ;
-_func_end : ;
-	return s_ret;
-}
-
-void int2E2D2D28int2629(int& this)
-{
-this -- ;
-}
-
-void char2Echar28char262Cchar2629(char& this,char& a)
-{
-this = a ;
-}
-
-int int2E2D28int2Cint29(int a,int b)
-{
-return a - b ;
-}
-
-﻿/*
 sum前加上int8可以求出正确的和
 如改成sum+=i+j可测试出C++的真实速度
 */
@@ -8628,13 +6529,31 @@ main
 	printl sum
 	
 	printl xf.tick-start
+}
+void main()
+{
+	for
+		s=xf.scanl//rf.get_param.get(2)
+		result=''
+		for i=0;i<s.count;i++
+			if rstr.is_number(s[i])&&(rstr.is_number(s.get(i+1))||s.get(i+1)>=`A&&s.get(i+1)<=`F)
+				temp=0
+				if rstr.is_number(s.get(i+1))
+					temp=s.get(i+1).toint-48
+				else
+					temp=s.get(i+1).toint-`A+10
+				result+=((s[i].toint-48)*16+temp).tochar
+				i++
+			else
+				result+=s[i]
+		printl result
 }﻿main
 {
-	s=getsl
-	start=rf.tick
+	s=scanl
+	start=xf.tick
 	rf.cmd(s)
-	putsl
-	putsl(rf.tick-start)
+	printl
+	printl(xf.tick-start)
 }﻿import rdir.h
 import rfile.h
 
@@ -8652,139 +6571,7 @@ void main()
 			continue
 		printl v[i]
 		rfile.write_all_n(v[i],dst)
-}﻿/*
-该程序只能用win_jit模式运行（Ctrl+F5）
-代码来自《windows程序设计》第三章
-*/
-
-mac c_text "HelloWin"
-
-void main()
-{
-	WNDCLASSA wndclass
-	wndclass.style=OR(CS_HREDRAW,CS_VREDRAW)
-	wndclass.lpfnWndProc=&proc_c
-	wndclass.cbClsExtra=0
-	wndclass.cbWndExtra=0
-	wndclass.hInstance=rf.get_hins
-	wndclass.hIcon=@LoadIconA(null,IDI_APPLICATION)
-	wndclass.hCursor=@LoadCursorA(null,IDC_ARROW)
-	wndclass.hbrBackground=@GetStockObject(WHITE_BRUSH)
-	wndclass.lpszMenuName=null
-	wndclass.lpszClassName=c_text
-	ifn @RegisterClassA(&wndclass)
-		return
-	void* hwnd=@CreateWindowExA(0,c_text,c_text,WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,
-		null,null,rf.get_hins,null)
-	@ShowWindow(hwnd,SW_SHOW)
-	@UpdateWindow(hwnd)
-	MSG msg
-	while @GetMessageA(&msg,null,0,0)
-		@TranslateMessage(&msg)
-		@DispatchMessageA(&msg)
-}
-
-int proc(void* hwnd,int message,int wParam,int lParam)
-{
-	switch message
-	case WM_CREATE
-		return 0
-	case WM_PAINT
-		PAINTSTRUCT ps
-		void* hdc=@BeginPaint(hwnd,&ps)
-		RECT rect
-		@GetClientRect(hwnd,&rect)
-		@DrawTextA(hdc,c_text,-1,&rect,OR(OR(
-			DT_SINGLELINE,DT_CENTER),DT_VCENTER))
-		@EndPaint(hwnd,&ps)
-		return 0
-	case WM_DESTROY
-		@PostQuitMessage(0)
-		return 0
-	return @DefWindowProcA(hwnd,message,wParam,lParam)
-}
-
-//C++回调RPP时需要保护寄存器，其实这段代码可用元编程自动生成
-int proc_c(void* hwnd,int message,int wParam,int lParam)
-{
-	push ebx
-	push esi
-	push edi
-	int ret=proc(hwnd,message,wParam,lParam)
-	pop edi
-	pop esi
-	pop ebx
-	mov eax,ret
-}
-
-struct PAINTSTRUCT
-{
-	void* hdc
-	bool fErase
-	RECT rcPaint
-	bool fRestore
-	bool fIncUpdate
-	uchar rgbReserved[32]
-}
-
-struct MSG
-{
-	void* hwnd
-	int message
-	int wParam
-	int lParam
-	uint time
-	POINT pt
-	uint lPrivate
-}
-
-struct POINT
-{
-	int x
-	int y
-}
-
-struct RECT
-{
-	int left
-	int top
-	int right
-	int bottom
-}
-
-struct WNDCLASSA
-{
-	uint style
-	void* lpfnWndProc
-	int cbClsExtra
-	int cbWndExtra
-	void* hInstance
-	void* hIcon
-	void* hCursor
-	void* hbrBackground
-	char* lpszMenuName
-	char* lpszClassName
-}
-
-#define CS_VREDRAW 0x0001
-#define CS_HREDRAW 0x0002
-#define IDI_APPLICATION 32512
-#define IDC_ARROW 32512
-#define WHITE_BRUSH 0
-#define WS_OVERLAPPEDWINDOW 13565952
-#define CW_USEDEFAULT 0x80000000
-#define SW_SHOW 5
-#define WM_CREATE 0x0001
-#define WM_DESTROY 0x0002
-#define WM_PAINT 0x000F
-
-#define DT_CENTER 0x00000001
-#define DT_RIGHT 0x00000002
-#define DT_VCENTER 0x00000004
-#define DT_BOTTOM 0x00000008
-#define DT_WORDBREAK 0x00000010
-#define DT_SINGLELINE 0x00000020355
+}355
 3628800
 55
 3628800
@@ -8816,10 +6603,6 @@ abc
 789
 123
 1234
-3
-1.100000
-3
-1.100000
 3
 1.100000
 3
@@ -9143,12 +6926,11 @@ cab132
 最简单的程序，1+2=3
 */
 
-void main()
-{
+void main():
 	a=1
 	b=2
 	print(a+b)
-}﻿/*
+	﻿/*
 模板函数
 */
 
@@ -11187,8 +8969,7 @@ main
 
 define ← =
 
-void insertion_sort(rstr& a)
-{
+void insertion_sort(rstr& a):
 	for j ← 1 to a.count-1
 		key ← a[j]
 		i ← j-1
@@ -11196,15 +8977,13 @@ void insertion_sort(rstr& a)
 			a[i+1] ← a[i]
 			i ← i-1
 		a[i+1] ← key
-}
 
-void main()
-{
+void main():
 	rstr a="cab132"
 	printl a
 	insertion_sort a
 	printl a
-}﻿#pragma once
+	﻿#pragma once
 
 #include "yfind.h"
 
@@ -11511,14 +9290,8 @@ struct yautof
 			tci.vfunc.insert(tfi);
 			added=true;
 		}
-		if(yfind::func_search(tci,tci.name,
-			tci.name+rppoptr(c_addr),tci.name)==null)
+		if(add_copystruct_func(sh,tci))
 		{
-			tfunc tfi=*yfind::copystruct_search(tci);
-			tfi.ptci=&tci;
-			tfi.param[1].type=tci.name;
-			tfi.name_dec=tfi.get_dec();
-			tci.vfunc.insert(tfi);
 			added=true;
 		}
 		if(yfind::func_search(tci,rppoptr(c_equal),tci.name+rppoptr(c_addr),
@@ -11593,6 +9366,79 @@ struct yautof
 			added=true;
 		}
 		return true;
+	}
+
+	static rbool add_copystruct_func(const tsh& sh,tclass& tci)
+	{
+		rbuf<tfunc> temp;
+		for(tfunc* p=tci.vfunc.begin();p!=tci.vfunc.end();p=tci.vfunc.next(p))
+		{
+			if(tci.name!=p->name)
+			{
+				continue;
+			}
+			if(p->param.count()<2)
+			{
+				continue;
+			}
+			int i;
+			for(i=0;i<p->param.count();i++)
+			{
+				ifn(ybase::is_quote(p->param[i].type))
+				{
+					break;
+				}
+			}
+			if(i<p->param.count())
+			{
+				continue;
+			}
+			tfunc* q;
+			for(q=tci.vfunc.begin();q!=tci.vfunc.end();q=tci.vfunc.next(q))
+			{
+				if(q->name!=p->name||q->param.count()!=p->param.count())
+				{
+					continue;
+				}
+				ifn(ybase::is_quote(q->param.get(0).type))
+				{
+					continue;
+				}
+				int j;
+				for(j=1;j<q->param.count();j++)
+				{
+					if(ybase::is_quote(q->param[j].type))
+					{
+						break;
+					}
+					if(ybase::get_tname(p->param[j].type)!=q->param[j].type)
+					{
+						break;
+					}
+				}
+				if(j>=q->param.count())
+				{
+					break;
+				}
+			}
+			if(q!=tci.vfunc.end())
+			{
+				continue;
+			}
+			tfunc tfi=*p;
+			tfi.ptci=&tci;
+			for(int i=1;i<tfi.param.count();i++)
+			{
+				tfi.param[i].type=ybase::get_tname(tfi.param[i].type);
+			}
+			tfi.name_dec=tfi.get_dec();
+			temp.push(tfi);
+		}
+		for(int k=0;k<temp.count();k++)
+		{
+			tci.vfunc.insert(temp[k]);
+		}
+		return !temp.empty();
 	}
 
 	static void add_copy_sent(const tsh& sh,tfunc& tfi)
@@ -12263,10 +10109,6 @@ struct ybase
 			sent.pos=vsent[i].pos;
 			for(int j=0;j<v.count();j++)
 			{
-				/*if(j==v.count()-1)
-				{
-					sent.type=vsent[i].type;//todo:仅GPP需要
-				}*/
 				sent.vword=r_move(v[j]);
 				result.push_move(sent);
 			}
@@ -12522,6 +10364,22 @@ struct ybase
 		}
 	}
 
+	static int get_word_tab(tword& word)
+	{
+		tpos pos=word.pos_src;
+		if(pos.file==null)
+		{
+			rpperror("pos file null");
+			return -1;
+		}
+		if(pos.line>=pos.file->tab_list.count())
+		{
+			rpperror("pos file null");
+			return -1;
+		}
+		return pos.file->tab_list[pos.line];
+	}
+
 	static rbool is_bbk_prev(const tsh& sh,const rstr& s)
 	{
 		return (s==rppoptr(c_comma)||s==rppoptr(c_equal)||
@@ -12768,7 +10626,21 @@ struct yclass
 				ybase::clear_word_val(v,i,i+3);
 				continue;
 			}
-			int left=r_find_a<tword>(v,tword(rppoptr(c_bbk_l)),i+1);
+			int left;
+			int j;
+			for(j=i+1;j<v.count();j++)
+			{
+				if(v[j].pos!=v[i].pos)
+				{
+					left=r_find_a<tword>(v,tword(rppoptr(c_bbk_l)),i+1);
+					break;
+				}
+				if(v[j].val==rppoptr(c_colon)&&v[j].pos!=v.get(j+1).pos)
+				{
+					left=j;
+					break;
+				}
+			}
 			if(left>=v.count())
 			{
 				rpperror(v.get(i),"miss {");
@@ -12776,7 +10648,7 @@ struct yclass
 			}
 			tclass item;
 			rbuf<tword> name_w;
-			for(int j=i+1;j<left;j++)
+			for(j=i+1;j<left;j++)
 			{
 				name_w.push(v[j]);
 			}
@@ -12786,11 +10658,26 @@ struct yclass
 				return false;
 			}
 			proc_cpp_tl(sh,v,i,name_w);
-			int right=ybase::find_symm_bbk(sh,v,left);
-			if(right>=v.count())
+			int right;
+			if(v[left].val==rppoptr(c_colon))
 			{
-				rpperror(v.get(i),"miss {");
-				return false;
+				for(int k=left+1;k<v.count();k++)
+				{
+					if(ybase::get_word_tab(v[k])<=ybase::get_word_tab(v[left]))
+					{
+						right=k;
+						break;
+					}
+				}
+			}
+			else
+			{
+				right=ybase::find_symm_bbk(sh,v,left);
+				if(right>=v.count())
+				{
+					rpperror(v.get(i),"miss {");
+					return false;
+				}
 			}
 			if(v.get(i-1).val==rppkey(c_friend))
 			{
@@ -12800,6 +10687,10 @@ struct yclass
 			for(int j=left+1;j<right;j++)
 			{
 				item.vword.push(v[j]);
+			}
+			if(v[left].val==rppoptr(c_colon))
+			{
+				right--;
 			}
 			for(int j=i;j<=right;j++)
 			{
@@ -13803,22 +11694,6 @@ struct ycontrol
 		return true;
 	}
 
-	static int get_word_tab(tword& word)
-	{
-		tpos pos=word.pos_src;
-		if(pos.file==null)
-		{
-			rf::printl("pos file null");
-			return -1;
-		}
-		if(pos.line>=pos.file->tab_list.count())
-		{
-			rf::printl("pos file null");
-			return -1;
-		}
-		return pos.file->tab_list[pos.line];
-	}
-
 	//获取低一层结尾语句的位置
 	static int get_low_end(rbuf<tword>& v,int begin,int head)
 	{
@@ -13828,7 +11703,7 @@ struct ycontrol
 		}
 		for(int i=begin+1;i<v.count();i++)
 		{
-			if(get_word_tab(v[i])<=get_word_tab(v[head]))
+			if(ybase::get_word_tab(v[i])<=ybase::get_word_tab(v[head]))
 			{
 				return i-1;
 			}
@@ -16116,16 +13991,8 @@ struct ylazy
 
 			tsent temp;
 			temp.type=rppkey(c_int);
-			/*temp.vword+=rppkey(c_int);
-			temp.vword+=rppoptr(c_dot);
-			temp.vword+=v[i].val.sub(0,2);
-			temp.vword+=rppoptr(c_sbk_l);
-			temp.vword+=v.sub(i+3,right-1);
-			temp.vword+=rppoptr(c_sbk_r);*/
 			temp.vword=v.sub(left,right+1);
 			temp.pos=sent.pos;
-			//ifn(yexp::p_exp(sh,temp,tfi,0,env))
-			//	return false;
 			vsent+=temp;
 
 			temp.type=rppkey(c_void);
@@ -16950,6 +14817,27 @@ struct ymemb
 					i--;
 				}
 			}
+			elif(v[i].val==rppoptr(c_colon))
+			{
+				int j;
+				for(j=i+1;j<v.count();j++)
+				{
+					if(ybase::get_word_tab(v[j])<=ybase::get_word_tab(v[i]))
+					{
+						break;
+					}
+				}
+				v[i].val=rppoptr(c_bbk_l);
+				rbuf<tword> temp=v.sub(start,j);
+				temp.push(v[j-1]);
+				temp.top().val=rppoptr(c_bbk_r);
+				ifn(func_add(sh,tci,temp))
+				{
+					return false;
+				}
+				i=j-1;
+				start=j;
+			}
 			elif(v[i].val==rppoptr(c_bbk_l))
 			{
 				int right=ybase::find_symm_bbk(sh,v,i);
@@ -17123,21 +15011,17 @@ struct ymemb
 			}
 			else
 			{
-				//mitem.vstr.push(rppoptr(c_sbk_l));
 				for(int j=left;j<=right;j++)
 				{
 					if(mitem.param.exist(v[j].val))
 					{
-						//mitem.vstr.push(rppoptr(c_sbk_l));
 						mitem.vstr.push(v[j].val);
-						//mitem.vstr.push(rppoptr(c_sbk_r));
 					}
 					else
 					{
 						mitem.vstr.push(v[j].val);
 					}
 				}
-				//mitem.vstr.push(rppoptr(c_sbk_r));
 			}
 		}
 		if(tci.vmac.exist(mitem))
@@ -17401,7 +15285,6 @@ struct ymemb
 			tdata ditem;
 			ifn(a_data_define(sh,ditem,list[i]))
 			{
-				//ybase::print_vword(v);
 				return false;
 			}
 			item.param.push(ditem);
@@ -17422,7 +15305,6 @@ struct ymemb
 		}
 		if(tci.vdata.exist(item))
 		{
-			//v.print();
 			rpperror(v.get_bottom(),"data member redefined");
 			return false;
 		}
@@ -17540,8 +15422,6 @@ struct ymemb
 			{
 				if(check_tl)
 				{
-					//ybase::print_vword(v);
-					//ybase::print_vword(vhead);
 					rpperror(v.get_bottom(),"func redefined");
 					return false;
 				}
@@ -17991,35 +15871,6 @@ struct ypre
 			name.pop_front();
 			name=rdir::dir_std_w(name);
 			rstrw temp=get_abs_name(rdir::get_prev_dir_w(f.name),name);
-			/*if(vname.exist(temp))
-			{
-				continue;
-			}
-			if(yread::exist(sh,temp))
-			{
-				continue;
-			}*/
-			/*if(!yread::file_exist(temp))
-			{
-				rstrw dir;
-				if(rdir::get_suffix_w(name)==rstrw("rp"))
-				{
-					dir=rstrw("rp/");
-				}
-				else
-				{
-					dir=rstrw("rsrc/");
-				}
-				temp=get_abs_name(exe_dir+dir,name);
-			}
-			if(vname.exist(temp))
-			{
-				continue;
-			}
-			if(yread::exist(sh,temp))
-			{
-				continue;
-			}*/
 			ifn(rfile::exist(temp))
 			{
 				ifn(get_file(sh,vname,name,temp))
@@ -18899,48 +16750,24 @@ struct yrep
 		rbuf<tword> vtemp;
 		if(ybase::is_quote(tdi.type)&&v.get(1)==rppoptr(c_equal))
 		{
-			/*if(sh.m_mode==tsh::c_gpp)
-			{
-				tdata temp_item;
-				temp_item.type="rp<"+tdi.type.sub_trim(1)+">";
-				temp_item.name=rppkey(c_temp)+rstr(tfi.tid);
-				tfi.tid++;
-				tfi.local.push(temp_item);
+			tdata temp_item;
+			temp_item.type="rp<void>";
+			temp_item.name=rppkey(c_temp)+rstr(tfi.tid);
+			tfi.tid++;
+			tfi.local.push(temp_item);
 
-				vtemp+=temp_item.name;
-				vtemp+=rppoptr(c_equal);
-				vtemp+=rppoptr(c_addr);
-				vtemp+=rppoptr(c_sbk_l);
-				vtemp+=v.sub(2);
-				vtemp+=rppoptr(c_sbk_r);
-				vtemp+=rppoptr(c_semi);
-				vtemp+=rppkey(c_mov);
-				vtemp+=tdi.name;
-				vtemp+=rppoptr(c_comma);
-				vtemp+=temp_item.name;
-				v=r_move(vtemp);
-			}
-			else
-			{*/
-				tdata temp_item;
-				temp_item.type="rp<void>";
-				temp_item.name=rppkey(c_temp)+rstr(tfi.tid);
-				tfi.tid++;
-				tfi.local.push(temp_item);
-
-				vtemp+=temp_item.name;
-				vtemp+=rppoptr(c_equal);
-				vtemp+=rppoptr(c_addr);
-				vtemp+=rppoptr(c_sbk_l);
-				vtemp+=v.sub(2);
-				vtemp+=rppoptr(c_sbk_r);
-				vtemp+=rppoptr(c_semi);
-				vtemp+=rppkey(c_mov);
-				vtemp+=tdi.name;
-				vtemp+=rppoptr(c_comma);
-				vtemp+=temp_item.name;
-				v=r_move(vtemp);
-			//}
+			vtemp+=temp_item.name;
+			vtemp+=rppoptr(c_equal);
+			vtemp+=rppoptr(c_addr);
+			vtemp+=rppoptr(c_sbk_l);
+			vtemp+=v.sub(2);
+			vtemp+=rppoptr(c_sbk_r);
+			vtemp+=rppoptr(c_semi);
+			vtemp+=rppkey(c_mov);
+			vtemp+=tdi.name;
+			vtemp+=rppoptr(c_comma);
+			vtemp+=temp_item.name;
+			v=r_move(vtemp);
 		}
 		else
 		{
@@ -19216,10 +17043,6 @@ struct ysent
 		//获取局部变量偏移
 		obtain_local_off(sh,tfi.local);
 		obtain_param_off(tfi);
-		/*if(tfi.name=="analyse"&&tfi.ptci->name=="ymemb")
-		{
-			ybase::print_func_sent(tfi);
-		}*/
 		//增加局部变量和成员变量的构造和析构
 		yadd::add_local_and_memb(sh,tfi);
 		//增加全局变量初始化汇编
@@ -19243,10 +17066,6 @@ struct ysent
 		{
 			return false;
 		}
-		/*if(tfi.name=="analyse"&&tfi.ptci->name=="ymemb")
-		{
-			ybase::print_func_sent(tfi);
-		}*/
 		//成员变量里有sizeof s_off的情况需要再次替换
 		//注意成员变量初始化的时候不能使用临时变量
 		//再处理一次，获取所有表达式的类型
@@ -19255,14 +17074,14 @@ struct ysent
 
 	static rbool macro_replace(tsh& sh,tfunc& tfi)
 	{
-		extern rbool _func_to_x86(tsh& sh,tfunc& tfi,tenv env);
+		extern rbool r_func_to_x86(tsh& sh,tfunc& tfi,tenv env);
 		rbuf<tword>& v=tfi.vword;
 		for(int i=0;i<v.count();i++)
 		{
 			if(sh.m_macro.exist(v[i].val))
 			{
 				tfunc* ptfi=sh.m_macro[v[i].val];
-				ifn(_func_to_x86(sh,*ptfi,tenv()))
+				ifn(r_func_to_x86(sh,*ptfi,tenv()))
 				{
 					return false;
 				}
@@ -19344,10 +17163,6 @@ struct ysent
 	//全局变量必须用g_开头
 	static void add_main_quote(tsh& sh,tfunc& tfi)
 	{
-		/*if(sh.m_mode==tsh::c_gpp)
-		{
-			return;
-		}*/
 		ifn(tfi.ptci->name==rppkey(c_main)&&tfi.name==rppkey(c_main))
 		{
 			int i;
@@ -20163,6 +17978,7 @@ EndGlobal
     <ClInclude Include="..\rlib\rfile.h" />
     <ClInclude Include="..\rlib\rhash.h" />
     <ClInclude Include="..\rlib\rlist.h" />
+    <ClInclude Include="..\rlib\rnew.h" />
     <ClInclude Include="..\rlib\rpair.h" />
     <ClInclude Include="..\rlib\rset.h" />
     <ClInclude Include="..\rlib\rstr.h" />
@@ -20514,6 +18330,9 @@ EndGlobal
     <ClInclude Include="..\rlib\rpair.h">
       <Filter>rlib</Filter>
     </ClInclude>
+    <ClInclude Include="..\rlib\rnew.h">
+      <Filter>rlib</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\rpp.cxx" />
@@ -20747,94 +18566,7 @@ rbuf<rbuf<T> > r_split_e_a(const rbuf<T>& v,const T& a,int start=0)
 }
 ﻿#pragma once
 
-#include "../xlib/xf.h"
-
-template<typename T>
-T* r_new(int count=1)
-{
-	T* p=(T*)(xf::malloc(r_size(int)+count*r_size(T)));
-	if(p==null)
-	{
-		xf::print("memory insufficient");
-		xf::exit(1);
-		return null;
-	}
-	*(int*)p=count;
-	p=(T*)((uchar*)p+r_size(int));
-	T* start=p;
-	T* end=start+count;
-	for(;p<end;p++)
-	{
-#ifndef _RPP
-		new(p)T();//((T*)p)->T::T();
-#else
-		p->T();
-#endif
-	}
-	return start;
-}
-
-template<typename T>
-T* r_new_n(int count=1)
-{
-	T* p=(T*)(xf::malloc(r_size(int)+count*r_size(T)));
-	if(p==null)
-	{
-		xf::print("memory insufficient");
-		xf::exit(1);
-		return null;
-	}
-	*(int*)p=count;
-	return (T*)((uchar*)p+r_size(int));
-}
-
-template<typename T>
-void r_delete(T* p)
-{
-	uchar* start=(uchar*)p-r_size(int);
-	T* end=p+*(int*)start;
-	for(;p<end;p++)
-	{
-#ifndef _RPP
-		p->~T();
-#else
-		T.~T(*p);
-#endif
-	}
-	xf::free(start);
-}
-
-template<typename T>
-void r_delete_n(T* p)//这里模板参数没用
-{
-	xf::free((uchar*)p-r_size(int));
-}
-
-//模板特化放在头文件里只能包含一次
-//如果注释掉这4个特化int、char等内置类型会初始化为0，效率略低
-template<>
-uchar* r_new<uchar>(int count)
-{
-	return r_new_n<uchar>(count);
-}
-
-template<>
-void r_delete<uchar>(uchar* p)
-{
-	r_delete_n<uchar>(p);
-}
-
-template<>
-ushort* r_new<ushort>(int count)
-{
-	return r_new_n<ushort>(count);
-}
-
-template<>
-void r_delete<ushort>(ushort* p)
-{
-	r_delete_n<ushort>(p);
-}
+#include "rnew.h"
 
 template<typename T>
 struct rbuf
@@ -21599,40 +19331,6 @@ struct rcode
 		return r_move(result);
 	}
 
-	/*static rstr gbk_to_utf16(const rstr& s)
-	{
-		rstr result;
-		ushort temp;
-		ushort wuni;
-		for(int i=0;i<s.count();i++)
-		{
-			get_first(temp)=s[i];
-			get_second(temp)=0;
-			wuni=gbk(temp);
-			if(wuni!=0)
-			{
-				result+=get_first(wuni);
-				result+=get_second(wuni);
-				continue;
-			}
-			if(i+1>=s.count())
-			{
-				continue;
-			}
-			get_first(temp)=s[i];
-			get_second(temp)=s[i+1];
-			wuni=gbk(temp);
-			if(wuni==0)
-			{
-				continue;
-			}
-			result+=get_first(wuni);
-			result+=get_second(wuni);
-			i++;
-		}
-		return r_move(result);
-	}*/
-
 	static rstr utf8_to_gbk(const rstr& s)
 	{
 		return utf16_to_gbk(utf8_to_utf16(s));
@@ -21680,32 +19378,6 @@ struct rcode
 		}
 		return r_move(result);
 	}
-
-	/*static rstr utf16_to_gbk(const rstr& s)
-	{
-		rstr result;
-		if(s.count()%2!=0)
-		{
-			return result;
-		}
-		ushort temp;
-		ushort wgbk;
-		for(int i=0;i<s.count();i+=2)
-		{
-			get_first(temp)=s[i];
-			get_second(temp)=s[i+1];
-			wgbk=unicode(temp);
-			if(get_first(wgbk)!=0)
-			{
-				result+=get_first(wgbk);
-			}
-			if(get_second(wgbk)!=0)
-			{
-				result+=get_second(wgbk);
-			}
-		}
-		return r_move(result);
-	}*/
 
 	static rstr utf16_to_utf8(const rstr& s)
 	{
@@ -21855,16 +19527,6 @@ struct rcode
 	{
 		return ch>=0x81&&ch<=0xfd;
 	}
-
-	/*static ushort unicode(int index)
-	{
-		return *(ushort*)&g_unicode[index*2];
-	}
-
-	static ushort gbk(int index)
-	{
-		return *(ushort*)&g_gbk[index*2];
-	}*/
 
 	static char& get_second(ushort& ch)
 	{
@@ -22621,7 +20283,6 @@ struct rf
 
 	static rbuf<rstr> get_param()
 	{
-		//return param_split(xf::GetCommandLineA());
 		return r_split<rstr>(xf::GetCommandLineA()," ");
 	}
 
@@ -23641,6 +21302,96 @@ struct rmutex_t
 		}
 	}
 };
+#pragma once
+
+#include "../xlib/xf.h"
+
+template<typename T>
+T* r_new(int count=1)
+{
+	T* p=(T*)(xf::malloc(r_size(int)+count*r_size(T)));
+	if(p==null)
+	{
+		xf::print("memory insufficient");
+		xf::exit(1);
+		return null;
+	}
+	*(int*)p=count;
+	p=(T*)((uchar*)p+r_size(int));
+	T* start=p;
+	T* end=start+count;
+	for(;p<end;p++)
+	{
+#ifndef _RPP
+		new(p)T();//((T*)p)->T::T();
+#else
+		p->T();
+#endif
+	}
+	return start;
+}
+
+template<typename T>
+T* r_new_n(int count=1)
+{
+	T* p=(T*)(xf::malloc(r_size(int)+count*r_size(T)));
+	if(p==null)
+	{
+		xf::print("memory insufficient");
+		xf::exit(1);
+		return null;
+	}
+	*(int*)p=count;
+	return (T*)((uchar*)p+r_size(int));
+}
+
+template<typename T>
+void r_delete(T* p)
+{
+	uchar* start=(uchar*)p-r_size(int);
+	T* end=p+*(int*)start;
+	for(;p<end;p++)
+	{
+#ifndef _RPP
+		p->~T();
+#else
+		T.~T(*p);
+#endif
+	}
+	xf::free(start);
+}
+
+template<typename T>
+void r_delete_n(T* p)//����ģ�����û��
+{
+	xf::free((uchar*)p-r_size(int));
+}
+
+//ģ���ػ�����ͷ�ļ���ֻ�ܰ���һ��
+//���ע�͵���4���ػ�int��char���������ͻ��ʼ��Ϊ0��Ч���Ե�
+template<>
+uchar* r_new<uchar>(int count)
+{
+	return r_new_n<uchar>(count);
+}
+
+template<>
+void r_delete<uchar>(uchar* p)
+{
+	r_delete_n<uchar>(p);
+}
+
+template<>
+ushort* r_new<ushort>(int count)
+{
+	return r_new_n<ushort>(count);
+}
+
+template<>
+void r_delete<ushort>(ushort* p)
+{
+	r_delete_n<ushort>(p);
+}
 ﻿#pragma once
 
 template<typename TA,typename TB>
@@ -24779,16 +22530,6 @@ struct rstrw
 		xf::memcpy(begin(),tmp.begin(),tmp.size());
 	}
 
-#ifdef _RPP
-	//todo:
-	rstrw(rstr s)
-	{
-		rstr tmp=rcode::utf8_to_utf16(s);
-		set_size(tmp.size());
-		xf::memcpy(begin(),tmp.begin(),tmp.size());
-	}
-#endif
-
 	rstrw(rstrw&& s)
 	{
 		m_buf.move(s.m_buf);
@@ -25410,83 +23151,6 @@ struct tins
 		c_uclesb_ra,
 		c_uclesb_aa,
 	};
-
-	enum
-	{
-		c_eval_txt,
-		c_cp_txt,
-		c_find_meta,
-		c_find_func,
-		c_find_dll,
-		c_stdcall_func,
-		c_cdecl_func,
-		c_get_vclass,
-
-		c_thr_create,
-		c_thr_wait,
-
-		c_mu_init,
-		c_mu_del,
-		c_mu_enter,
-		c_mu_leave,
-
-		c_execmd,
-		c_srand,
-		c_rand,
-		c_gettick,
-		c_sleep,
-
-		c_puts,
-		c_puts_l,
-		c_getch,
-		c_getstdin,
-		c_getstdout,
-		c_get_argc,
-		c_get_argv,
-
-		c_sprintf,
-		c_sprintf8,
-		c_sscanf,
-
-		c_malloc,
-		c_mfree,
-		c_memset,
-		c_memcpy,
-		
-		c_strcpy,
-		c_strcmp,
-		c_strlen,
-		
-		c_fopen_w,
-		c_fopen,
-		c_fclose,
-		c_fread,
-		c_fwrite,
-		c_fseek,
-		c_fseek8,
-		c_ftell,
-		c_ftell8,
-
-		c_s_socket,
-		c_s_connect,
-		c_s_close,
-		c_s_send,
-		c_s_recv,
-		c_s_bind,
-		c_s_listen,
-		c_s_accept,
-		
-		c_gbk_to_utf8,
-		c_gbk_to_utf16,
-		c_utf8_to_gbk,
-		c_utf8_to_utf16,
-		c_utf16_to_gbk,
-		c_utf16_to_utf8,
-		
-		c_CloseHandle,
-		c_MessageBoxA,
-		c_itof8,
-	};
 };
 
 struct tfile;
@@ -25543,14 +23207,6 @@ struct tasm
 		clear();
 		this->vstr=vstr;
 	}
-
-#ifdef _RPP
-	tasm(rbuf<rstr> vstr)
-	{
-		clear();
-		this->vstr=vstr;
-	}
-#endif
 
 	tasm(const rbuf<rstr>& vstr,tpos pos)
 	{
@@ -25624,14 +23280,6 @@ struct tword
 		clear();
 		val=s;
 	}
-
-#ifdef _RPP
-	tword(rstr s)
-	{
-		clear();
-		val=s;
-	}
-#endif
 
 	tword(tword&& a)
 	{
@@ -25890,15 +23538,6 @@ struct tdata
 		this->type=type;
 		this->name=name;
 	}
-
-#ifdef _RPP
-	tdata(rstr type,rstr name)
-	{
-		clear();
-		this->type=type;
-		this->name=name;
-	}
-#endif
 
 	void clear()
 	{

@@ -1,0 +1,17 @@
+﻿/*
+将输入的大写转换成小写
+可以用管道进行测试
+dir | rpp.exe example/36_9.rpp
+*/
+
+main
+{
+	for
+		s=xf.scanl
+		if s.empty
+			return
+		for i in s
+			if s[i]>=r_char('A')&&s[i]<=r_char('Z')
+				s[i]=s[i].toint+32
+		printl s
+}

@@ -1,0 +1,11 @@
+﻿/*
+打印出自身的汇编代码以及表达式语句
+*/
+
+import eval.rpp
+
+main
+{
+	ybase.print_func_sent(*findfunc('main'))
+	ybase.print_func_asm(*findfunc('main'))
+}

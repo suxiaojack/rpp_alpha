@@ -1,0 +1,13 @@
+﻿/*
+互斥体
+*/
+
+import rmutex.h
+
+main
+{
+	rmutex mu
+	mu.enter
+	print 'protected code'
+	mu.leave
+}

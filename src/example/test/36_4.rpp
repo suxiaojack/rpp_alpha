@@ -1,0 +1,22 @@
+﻿/*
+split、快排、二分
+*/
+
+import "ralgo.h"
+
+main
+{
+	rbuf<rstr> v=r_split<rstr>('321;1343;fj242i;12',';')
+	for i in v
+		v[i].printl
+	printl
+	
+	r_qsort<rstr>(v)
+	for i in v
+		v[i].printl
+	printl
+	
+	v.get(r_find_b<rstr>(v,'12')).printl
+	
+	'1234'.find('34').printl
+}

@@ -1,0 +1,209 @@
+﻿class int8
+{
+	rd8 m_in
+
+	final ~int8()
+	{
+	}
+
+	final int8()
+	{
+	}
+
+	final int8(int8 a)
+	{
+		this=a;
+	}
+
+	final int8(int8& a)
+	{
+		this=a;
+	}
+
+	final int8(int a)
+	{
+		this=a;
+	}
+
+	final int8(uint a)
+	{
+		this=a;
+	}
+	
+	TYPE to<TYPE>()
+	{
+		xf.print("error\n")
+	}
+	
+	template<>
+	int to<int>()
+	{
+		return toint
+	}
+	
+	template<>
+	uint to<uint>()
+	{
+		return toint.touint
+	}
+	
+	template<>
+	char to<char>()
+	{
+		return toint.tochar
+	}
+	
+	template<>
+	ushort to<ushort>()
+	{
+		return toint.toushort
+	}
+
+	final int toint()
+	{
+		return (int)this;
+	}
+
+	rstr torstr()
+	{
+		rstr ret(this)
+		return ret
+	}
+
+	final void operator=(int8 a)
+	{
+		this=a;
+	}
+
+	final void operator=(int8& a)
+	{
+		this=a;
+	}
+
+	friend operator<->(int8& a,int8& b)
+	{
+		c=a
+		a=b
+		b=c
+	}
+
+	final void operator+=(int8 a)
+	{
+		this+=a;
+	}
+
+	final void operator-=(int8 a)
+	{
+		this-=a;
+	}
+
+	final void operator*=(int8 a)
+	{
+		this*=a;
+	}
+	
+	final void operator/=(int8 a)
+	{
+		this/=a;
+	}
+	
+	void operator%=(int8 a)
+	{
+		this=this%a
+	}
+
+	void operator++()
+	{
+		this+=1
+	}
+
+	void operator--()
+	{
+		this-=1
+	}
+
+	friend int8 operator+(int8 a,int8 b) 
+	{
+		a+=b
+		return a
+	}
+
+	friend int8 operator-(int8 a,int8 b)
+	{
+		a-=b
+		return a
+	}
+	
+	friend int8 operator*(int8 a,int8 b)
+	{
+		a*=b
+		return a
+	}
+
+	friend int8 operator/(int8 a,int8 b)
+	{
+		a/=b
+		return a
+	}
+	
+	//todo
+	friend int8 operator%(int8 a,int8 b)
+	{
+		return a-a/b*b
+	}
+	
+	final friend bool operator<(int8 a,int8 b)
+	{
+		return a<b;
+	}
+
+	friend bool operator<=(int8 a,int8 b)
+	{
+		return a<b||a==b;
+	}
+
+	final friend bool operator==(int8 a,int8 b)
+	{
+		return a==b;
+	}
+
+	friend bool operator!=(int8 a,int8 b)
+	{
+		return !(a==b)
+	}
+
+	friend bool operator>(int8 a,int8 b)
+	{
+		return b<a;
+	}
+
+	friend bool operator>=(int8 a,int8 b)
+	{
+		return b<=a;
+	}
+	
+	friend int8 operator neg(int8 a)
+	{
+		return 0-a;
+	}
+
+	void clear()
+	{
+		this=0
+	}
+
+	bool empty()
+	{
+		return 0==this
+	}
+
+	/*print()
+	{
+		rf.print this
+	}
+
+	printl()
+	{
+		rf.printl this
+	}*/
+}

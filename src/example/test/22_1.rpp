@@ -1,0 +1,41 @@
+﻿/*
+本地调用
+*/
+
+main
+{
+#ifdef _RVM
+	printl cdecl["strlen","abc"]
+	printl cdecl_p[rf.find_dll("strlen"),"abc"]
+	printl cdecl["strcmp","abc","abc"]
+	printl cdecl["strcmp","abc","123"]
+	printl cdecl["strcmp","123","abc"]
+#endif
+#ifdef _JIT
+	printl mystrlen("abc")
+	printl mystrlen("abc")
+	printl mystrcmp("abc","abc")
+	printl mystrcmp("abc","123")
+	printl mystrcmp("123","abc")
+#endif
+	printl xf.strlen("abc")
+}
+
+int mystrlen(char* s)
+{
+	p=xf.find_dll_func("strlen")
+	push s
+	call p
+	mov s_ret,eax
+	add esp,4
+}
+
+int mystrcmp(char* a,char* b)
+{
+	p=xf.find_dll_func("strcmp")
+	push b
+	push a
+	call p
+	mov s_ret,eax
+	add esp,8
+}

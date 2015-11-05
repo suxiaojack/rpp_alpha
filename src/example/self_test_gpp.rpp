@@ -1,0 +1,14 @@
+import rfile.h
+
+void main()
+{
+	rf.cmd("gpp_build ..\\src\\rpp.cxx")
+	rf.cmd("copy /B /Y ..\\src\\rpp.exe rpp_gpp.exe")
+	rf.cmd("rpp -win ../src/rpp.cxx")
+	rf.cmd("copy /B /Y ..\\src\\rpp.asm rpp_gpp.asm")
+	rf.cmd("rpp_gpp -win ../src/rpp.cxx")
+	if rfile.read_all_n("rpp_gpp.asm")==rfile.read_all_n("..\\src\\rpp.asm")
+		printl "ok"
+	else
+		printl "error"
+}
